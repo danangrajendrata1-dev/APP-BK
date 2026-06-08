@@ -86,7 +86,7 @@ export default async function ConfessionBoxPage({ searchParams }: PageProps) {
     role = await getCurrentRole();
     result = await getConfessions({
       page,
-      pageSize: 10,
+      pageSize: 20,
       filters,
     });
   } catch (error) {

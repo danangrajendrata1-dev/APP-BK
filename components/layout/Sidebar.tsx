@@ -1,16 +1,16 @@
 "use client";
 
+import { useMemo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import type { AppNavItem } from "@/lib/auth/permissions";
+import { useAuth } from "@/components/providers/AuthProvider";
+import { getVisibleMenuItems } from "@/lib/auth/permissions";
 
-type SidebarProps = {
-  items: AppNavItem[];
-};
-
-export function Sidebar({ items }: SidebarProps) {
+export function Sidebar() {
   const pathname = usePathname();
+  const { isLoading, role } = useAuth();
+  const items = useMemo(() => getVisibleMenuItems(role), [role]);
 
   return (
     <aside className="hidden h-screen w-80 shrink-0 border-r border-slate-200 bg-white lg:flex lg:flex-col">
@@ -28,6 +28,11 @@ export function Sidebar({ items }: SidebarProps) {
       </div>
 
       <nav className="flex-1 space-y-1 overflow-y-auto px-4 py-5">
+        {isLoading ? (
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-600">
+            Memuat menu...
+          </div>
+        ) : null}
         {items.map((item, index) => {
           const isActive =
             pathname === item.href || pathname.startsWith(`${item.href}/`);

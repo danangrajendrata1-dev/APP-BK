@@ -9,16 +9,30 @@ import type {
 } from "@/features/confession-box/types/confession";
 
 const DEFAULT_PAGE = 1;
-const DEFAULT_PAGE_SIZE = 10;
+const DEFAULT_PAGE_SIZE = 20;
+const CONFESSION_LIST_COLUMNS =
+  "id, confession_date, student_id, student_name, class_name, category, content, description, created_by";
 
 type ConfessionRow = Database["public"]["Tables"]["confession_box"]["Row"];
+type ConfessionListRow = Pick<
+  ConfessionRow,
+  | "id"
+  | "confession_date"
+  | "student_id"
+  | "student_name"
+  | "class_name"
+  | "category"
+  | "content"
+  | "description"
+  | "created_by"
+>;
 type ConfessionInsert = Database["public"]["Tables"]["confession_box"]["Insert"];
 
 function normalizeText(value: string | null | undefined) {
   return value ?? "";
 }
 
-function mapConfession(row: ConfessionRow): ConfessionItem {
+function mapConfession(row: ConfessionListRow): ConfessionItem {
   return {
     id: row.id,
     confessionDate: row.confession_date,
@@ -59,7 +73,7 @@ export async function getConfessions(
 
   let query = supabase
     .from("confession_box")
-    .select("*", { count: "exact" })
+    .select(CONFESSION_LIST_COLUMNS, { count: "exact" })
     .order("confession_date", { ascending: false })
     .range(from, to);
 

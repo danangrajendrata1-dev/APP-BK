@@ -9,10 +9,28 @@ import type {
 } from "@/features/bk-service-attendance/types/bkServiceAttendance";
 
 const DEFAULT_PAGE = 1;
-const DEFAULT_PAGE_SIZE = 10;
+const DEFAULT_PAGE_SIZE = 20;
+const BK_SERVICE_ATTENDANCE_LIST_COLUMNS =
+  "id, service_date, student_id, student_name, class_name, arrival_time, finish_time, purpose, service_type, counselor_name, description, created_at, updated_at";
 
 type BkServiceAttendanceRow =
   Database["public"]["Tables"]["bk_service_attendance"]["Row"];
+type BkServiceAttendanceListRow = Pick<
+  BkServiceAttendanceRow,
+  | "id"
+  | "service_date"
+  | "student_id"
+  | "student_name"
+  | "class_name"
+  | "arrival_time"
+  | "finish_time"
+  | "purpose"
+  | "service_type"
+  | "counselor_name"
+  | "description"
+  | "created_at"
+  | "updated_at"
+>;
 type BkServiceAttendanceInsert =
   Database["public"]["Tables"]["bk_service_attendance"]["Insert"];
 
@@ -21,7 +39,7 @@ function normalizeText(value: string | null | undefined) {
 }
 
 function mapBkServiceAttendance(
-  row: BkServiceAttendanceRow,
+  row: BkServiceAttendanceListRow,
 ): BkServiceAttendanceItem {
   return {
     id: row.id,
@@ -69,7 +87,7 @@ export async function getBkServiceAttendances(
 
   let query = supabase
     .from("bk_service_attendance")
-    .select("*", { count: "exact" })
+    .select(BK_SERVICE_ATTENDANCE_LIST_COLUMNS, { count: "exact" })
     .order("service_date", { ascending: false })
     .range(from, to);
 

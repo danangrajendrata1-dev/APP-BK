@@ -2,7 +2,6 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 import {
-  canAccessPath,
   getDefaultRouteForRole,
   isProtectedRoute,
   isPublicRoute,
@@ -23,9 +22,15 @@ function getSupabaseEnv() {
 }
 
 export async function proxy(request: NextRequest) {
-  const response = NextResponse.next({
-    request,
-  });
+  const pathname = request.nextUrl.pathname;
+
+  if (!isProtectedRoute(pathname) && !isPublicRoute(pathname)) {
+    return NextResponse.next({
+      request,
+    });
+  }
+
+  const response = NextResponse.next({ request });
 
   const { url, anonKey } = getSupabaseEnv();
   const supabase = createServerClient(url, anonKey, {
@@ -43,12 +48,10 @@ export async function proxy(request: NextRequest) {
   });
 
   const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    data: { session },
+  } = await supabase.auth.getSession();
 
-  const pathname = request.nextUrl.pathname;
-
-  if (!user) {
+  if (!session) {
     if (isProtectedRoute(pathname)) {
       const loginUrl = request.nextUrl.clone();
       loginUrl.pathname = "/login";
@@ -59,24 +62,9 @@ export async function proxy(request: NextRequest) {
     return response;
   }
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  const profileRole = (profile as { role?: string } | null)?.role;
-  const role = normalizeRole(profileRole ?? user.user_metadata?.role);
-  const defaultRoute = getDefaultRouteForRole(role);
-
   if (isPublicRoute(pathname)) {
-    const destinationUrl = request.nextUrl.clone();
-    destinationUrl.pathname = defaultRoute;
-    destinationUrl.search = "";
-    return NextResponse.redirect(destinationUrl);
-  }
-
-  if (isProtectedRoute(pathname) && !canAccessPath(role, pathname)) {
+    const role = normalizeRole(session.user.user_metadata?.role);
+    const defaultRoute = getDefaultRouteForRole(role);
     const destinationUrl = request.nextUrl.clone();
     destinationUrl.pathname = defaultRoute;
     destinationUrl.search = "";
@@ -87,5 +75,7 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"],
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|manifest.json|.*\\..*).*)",
+  ],
 };

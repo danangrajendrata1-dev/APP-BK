@@ -14,8 +14,10 @@ import type {
 } from "@/features/home-visits/types/homeVisit";
 
 const DEFAULT_PAGE = 1;
-const DEFAULT_PAGE_SIZE = 10;
+const DEFAULT_PAGE_SIZE = 20;
 const HOME_VISIT_BUCKET = "home-visit-files";
+const HOME_VISIT_LIST_COLUMNS =
+  "id, visit_date, student_id, student_name, parent_name, class_name, address, visit_result, follow_up, documentation_path";
 const HOME_VISIT_ALLOWED_TYPES = [
   "image/jpeg",
   "image/png",
@@ -24,13 +26,26 @@ const HOME_VISIT_ALLOWED_TYPES = [
 ] as const;
 
 type HomeVisitRow = Database["public"]["Tables"]["home_visits"]["Row"];
+type HomeVisitListRow = Pick<
+  HomeVisitRow,
+  | "id"
+  | "visit_date"
+  | "student_id"
+  | "student_name"
+  | "parent_name"
+  | "class_name"
+  | "address"
+  | "visit_result"
+  | "follow_up"
+  | "documentation_path"
+>;
 type HomeVisitInsert = Database["public"]["Tables"]["home_visits"]["Insert"];
 
 function normalizeText(value: string | null | undefined) {
   return value ?? "";
 }
 
-async function mapHomeVisit(row: HomeVisitRow): Promise<HomeVisitItem> {
+async function mapHomeVisit(row: HomeVisitListRow): Promise<HomeVisitItem> {
   const documentationPath = normalizeText(row.documentation_path);
   const documentationUrl = documentationPath
     ? ((await createSignedFileUrl(HOME_VISIT_BUCKET, documentationPath)) ?? "")
@@ -82,7 +97,7 @@ export async function getHomeVisits(
 
   let query = supabase
     .from("home_visits")
-    .select("*", { count: "exact" })
+    .select(HOME_VISIT_LIST_COLUMNS, { count: "exact" })
     .order("visit_date", { ascending: false })
     .range(from, to);
 

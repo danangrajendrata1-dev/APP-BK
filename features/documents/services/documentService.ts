@@ -14,8 +14,10 @@ import type {
 } from "@/features/documents/types/document";
 
 const DEFAULT_PAGE = 1;
-const DEFAULT_PAGE_SIZE = 10;
+const DEFAULT_PAGE_SIZE = 20;
 const DOCUMENT_BUCKET = "document-files";
+const DOCUMENT_LIST_COLUMNS =
+  "id, letter_number, document_date, student_id, student_name, class_name, document_type, file_path, description";
 const DOCUMENT_ALLOWED_TYPES = [
   "application/pdf",
   "application/msword",
@@ -26,13 +28,25 @@ const DOCUMENT_ALLOWED_TYPES = [
 ] as const;
 
 type DocumentRow = Database["public"]["Tables"]["documents"]["Row"];
+type DocumentListRow = Pick<
+  DocumentRow,
+  | "id"
+  | "letter_number"
+  | "document_date"
+  | "student_id"
+  | "student_name"
+  | "class_name"
+  | "document_type"
+  | "file_path"
+  | "description"
+>;
 type DocumentInsert = Database["public"]["Tables"]["documents"]["Insert"];
 
 function normalizeText(value: string | null | undefined) {
   return value ?? "";
 }
 
-async function mapDocument(row: DocumentRow): Promise<DocumentItem> {
+async function mapDocument(row: DocumentListRow): Promise<DocumentItem> {
   const filePath = normalizeText(row.file_path);
   const fileUrl = filePath
     ? ((await createSignedFileUrl(DOCUMENT_BUCKET, filePath)) ?? "")
@@ -82,7 +96,7 @@ export async function getDocuments(
 
   let query = supabase
     .from("documents")
-    .select("*", { count: "exact" })
+    .select(DOCUMENT_LIST_COLUMNS, { count: "exact" })
     .order("document_date", { ascending: false })
     .range(from, to);
 

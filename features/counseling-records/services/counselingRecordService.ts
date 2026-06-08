@@ -9,9 +9,28 @@ import type {
 } from "@/features/counseling-records/types/counselingRecord";
 
 const DEFAULT_PAGE = 1;
-const DEFAULT_PAGE_SIZE = 10;
+const DEFAULT_PAGE_SIZE = 20;
+const COUNSELING_RECORD_LIST_COLUMNS =
+  "id, counseling_date, student_id, student_name, class_name, meeting_number, media, counseling_type, topic, counseling_result, follow_up, description, created_at, updated_at";
 
 type CounselingRow = Database["public"]["Tables"]["counseling_records"]["Row"];
+type CounselingListRow = Pick<
+  CounselingRow,
+  | "id"
+  | "counseling_date"
+  | "student_id"
+  | "student_name"
+  | "class_name"
+  | "meeting_number"
+  | "media"
+  | "counseling_type"
+  | "topic"
+  | "counseling_result"
+  | "follow_up"
+  | "description"
+  | "created_at"
+  | "updated_at"
+>;
 type CounselingInsert =
   Database["public"]["Tables"]["counseling_records"]["Insert"];
 
@@ -19,7 +38,7 @@ function normalizeText(value: string | null | undefined) {
   return value ?? "";
 }
 
-function mapCounselingRecord(row: CounselingRow): CounselingRecordItem {
+function mapCounselingRecord(row: CounselingListRow): CounselingRecordItem {
   return {
     id: row.id,
     counselingDate: row.counseling_date,
@@ -68,7 +87,7 @@ export async function getCounselingRecords(
 
   let query = supabase
     .from("counseling_records")
-    .select("*", { count: "exact" })
+    .select(COUNSELING_RECORD_LIST_COLUMNS, { count: "exact" })
     .order("counseling_date", { ascending: false })
     .range(from, to);
 

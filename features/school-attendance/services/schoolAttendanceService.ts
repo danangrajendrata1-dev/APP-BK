@@ -10,9 +10,23 @@ import type {
 } from "@/features/school-attendance/types/schoolAttendance";
 
 const DEFAULT_PAGE = 1;
-const DEFAULT_PAGE_SIZE = 10;
+const DEFAULT_PAGE_SIZE = 20;
+const SCHOOL_ATTENDANCE_LIST_COLUMNS =
+  "id, attendance_date, student_id, student_name, class_name, status, description, created_at, updated_at";
 
 type SchoolAttendanceRow = Database["public"]["Tables"]["school_attendance"]["Row"];
+type SchoolAttendanceListRow = Pick<
+  SchoolAttendanceRow,
+  | "id"
+  | "attendance_date"
+  | "student_id"
+  | "student_name"
+  | "class_name"
+  | "status"
+  | "description"
+  | "created_at"
+  | "updated_at"
+>;
 type SchoolAttendanceInsert =
   Database["public"]["Tables"]["school_attendance"]["Insert"];
 type StudentReferenceRow = Pick<
@@ -25,7 +39,7 @@ function normalizeText(value: string | null | undefined) {
 }
 
 function mapSchoolAttendance(
-  row: SchoolAttendanceRow,
+  row: SchoolAttendanceListRow,
 ): SchoolAttendanceItem {
   return {
     id: row.id,
@@ -89,7 +103,7 @@ export async function getSchoolAttendances(
 
   let query = supabase
     .from("school_attendance")
-    .select("*", { count: "exact" })
+    .select(SCHOOL_ATTENDANCE_LIST_COLUMNS, { count: "exact" })
     .order("attendance_date", { ascending: false })
     .range(from, to);
 

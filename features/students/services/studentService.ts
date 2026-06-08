@@ -9,9 +9,28 @@ import type {
 } from "@/features/students/types/student";
 
 const DEFAULT_PAGE = 1;
-const DEFAULT_PAGE_SIZE = 10;
+const DEFAULT_PAGE_SIZE = 20;
+const STUDENT_LIST_COLUMNS =
+  "id, nisn, full_name, gender, class_name, major, birth_place_date, address, phone, parent_name, parent_phone, status, created_at, updated_at";
 
 type StudentRow = Database["public"]["Tables"]["students"]["Row"];
+type StudentListRow = Pick<
+  StudentRow,
+  | "id"
+  | "nisn"
+  | "full_name"
+  | "gender"
+  | "class_name"
+  | "major"
+  | "birth_place_date"
+  | "address"
+  | "phone"
+  | "parent_name"
+  | "parent_phone"
+  | "status"
+  | "created_at"
+  | "updated_at"
+>;
 type StudentInsert = Database["public"]["Tables"]["students"]["Insert"];
 type StudentUpdate = Database["public"]["Tables"]["students"]["Update"];
 
@@ -19,7 +38,7 @@ function normalizeText(value: string | null | undefined) {
   return value ?? "";
 }
 
-function mapStudent(row: StudentRow): Student {
+function mapStudent(row: StudentListRow): Student {
   return {
     id: row.id,
     nisn: row.nisn,
@@ -66,7 +85,7 @@ export async function getStudents(
 
   let query = supabase
     .from("students")
-    .select("*", { count: "exact" })
+    .select(STUDENT_LIST_COLUMNS, { count: "exact" })
     .order("full_name", { ascending: true })
     .range(from, to);
 
@@ -114,7 +133,7 @@ export async function getStudentById(id: string): Promise<Student | null> {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("students")
-    .select("*")
+    .select(STUDENT_LIST_COLUMNS)
     .eq("id", id)
     .maybeSingle();
 

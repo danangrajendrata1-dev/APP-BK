@@ -4,15 +4,29 @@ import type { ClassAssistanceFormValues } from "@/types/common";
 import type { ClassAssistanceItem, ClassAssistanceListQuery, ClassAssistanceListResult } from "@/features/class-assistances/types/classAssistance";
 
 const DEFAULT_PAGE = 1;
-const DEFAULT_PAGE_SIZE = 10;
+const DEFAULT_PAGE_SIZE = 20;
+const CLASS_ASSISTANCE_LIST_COLUMNS =
+  "id, student_id, student_name, class_name, violation_type, action_form, remission, description, final_warning_letter";
 type ClassAssistanceRow = Database["public"]["Tables"]["class_assistances"]["Row"];
+type ClassAssistanceListRow = Pick<
+  ClassAssistanceRow,
+  | "id"
+  | "student_id"
+  | "student_name"
+  | "class_name"
+  | "violation_type"
+  | "action_form"
+  | "remission"
+  | "description"
+  | "final_warning_letter"
+>;
 type ClassAssistanceInsert = Database["public"]["Tables"]["class_assistances"]["Insert"];
 
 function normalizeText(value: string | null | undefined) {
   return value ?? "";
 }
 
-function mapClassAssistance(row: ClassAssistanceRow): ClassAssistanceItem {
+function mapClassAssistance(row: ClassAssistanceListRow): ClassAssistanceItem {
   return {
     id: row.id,
     studentId: row.student_id ?? "",
@@ -51,7 +65,7 @@ export async function getClassAssistances(
 
   let query = supabase
     .from("class_assistances")
-    .select("*", { count: "exact" })
+    .select(CLASS_ASSISTANCE_LIST_COLUMNS, { count: "exact" })
     .order("student_name", { ascending: true })
     .range(from, to);
 

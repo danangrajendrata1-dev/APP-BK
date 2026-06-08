@@ -63,7 +63,7 @@ export default async function ClassAssistancesPage({ searchParams }: PageProps) 
   try {
     [students, result] = await Promise.all([
       getStudentReferences(),
-      getClassAssistances({ page, pageSize: 10, filters }),
+      getClassAssistances({ page, pageSize: 20, filters }),
     ]);
   } catch (error) {
     loadError =

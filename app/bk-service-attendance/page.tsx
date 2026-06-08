@@ -112,7 +112,7 @@ export default async function BkServiceAttendancePage({
       getStudentReferences(),
       getBkServiceAttendances({
         page,
-        pageSize: 10,
+        pageSize: 20,
         filters,
       }),
     ]);

@@ -63,7 +63,7 @@ export default async function AssessmentsPage({ searchParams }: PageProps) {
   }
 
   try {
-    result = await getAssessments({ page, pageSize: 10, filters });
+    result = await getAssessments({ page, pageSize: 20, filters });
   } catch (error) {
     loadError =
       error instanceof Error ? error.message : "Data inventori dan asesmen gagal dimuat.";

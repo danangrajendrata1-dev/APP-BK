@@ -85,7 +85,7 @@ export default function RegisterPage() {
               type="text"
               value={fullName}
               onChange={(event) => setFullName(event.target.value)}
-              className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-slate-500"
+              className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-black outline-none transition placeholder:text-gray-500 focus:border-slate-500"
               placeholder="Nama lengkap"
               required
             />
@@ -97,7 +97,7 @@ export default function RegisterPage() {
               type="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
-              className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-slate-500"
+              className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-black outline-none transition placeholder:text-gray-500 focus:border-slate-500"
               placeholder="nama@sekolah.sch.id"
               required
             />
@@ -109,7 +109,7 @@ export default function RegisterPage() {
               type="password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-slate-500"
+              className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-black outline-none transition placeholder:text-gray-500 focus:border-slate-500"
               placeholder="Minimal 6 karakter"
               minLength={6}
               required
@@ -124,7 +124,7 @@ export default function RegisterPage() {
               type="password"
               value={confirmPassword}
               onChange={(event) => setConfirmPassword(event.target.value)}
-              className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-slate-500"
+              className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-black outline-none transition placeholder:text-gray-500 focus:border-slate-500"
               placeholder="Ulangi password"
               minLength={6}
               required

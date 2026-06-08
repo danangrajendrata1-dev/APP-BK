@@ -10,28 +10,47 @@ function sortSeriesDescending(series: DashboardSeriesItem[]) {
 
 export async function getDashboardSummary(): Promise<DashboardSummary> {
   const supabase = await createSupabaseServerClient();
+  const now = new Date();
+  const counselingStartDate = new Date(now.getFullYear(), now.getMonth() - 5, 1)
+    .toISOString()
+    .slice(0, 10);
+  const assistanceStartMonth = now.getMonth() + 1 - 5;
+  const assistanceStartYear =
+    assistanceStartMonth > 0 ? now.getFullYear() : now.getFullYear() - 1;
+  const normalizedAssistanceStartMonth =
+    assistanceStartMonth > 0 ? assistanceStartMonth : assistanceStartMonth + 12;
 
   const [
     studentsResult,
+    studentsPerClassResult,
     counselingResult,
     assistanceResult,
     documentsResult,
     homeVisitsResult,
     confessionsResult,
   ] = await Promise.all([
-    supabase.from("students").select("class_name", { count: "exact" }),
-    supabase.from("counseling_records").select("counseling_date"),
-    supabase.from("student_assistances").select("assistance_month, assistance_year, total"),
-    supabase.from("documents").select("id", { count: "exact" }),
-    supabase.from("home_visits").select("id", { count: "exact" }),
-    supabase.from("confession_box").select("id", { count: "exact" }),
+    supabase.from("students").select("id", { count: "exact", head: true }),
+    supabase.from("students").select("class_name"),
+    supabase
+      .from("counseling_records")
+      .select("counseling_date")
+      .gte("counseling_date", counselingStartDate),
+    supabase
+      .from("student_assistances")
+      .select("assistance_month, assistance_year, total")
+      .or(
+        `assistance_year.gt.${assistanceStartYear},and(assistance_year.eq.${assistanceStartYear},assistance_month.gte.${normalizedAssistanceStartMonth})`,
+      ),
+    supabase.from("documents").select("id", { count: "exact", head: true }),
+    supabase.from("home_visits").select("id", { count: "exact", head: true }),
+    supabase.from("confession_box").select("id", { count: "exact", head: true }),
   ]);
 
-  if (studentsResult.error || counselingResult.error || assistanceResult.error || documentsResult.error || homeVisitsResult.error || confessionsResult.error) {
+  if (studentsResult.error || studentsPerClassResult.error || counselingResult.error || assistanceResult.error || documentsResult.error || homeVisitsResult.error || confessionsResult.error) {
     throw new Error("Gagal memuat ringkasan dashboard.");
   }
 
-  const students = studentsResult.data ?? [];
+  const students = studentsPerClassResult.data ?? [];
   const counselingRecords = counselingResult.data ?? [];
   const assistances = assistanceResult.data ?? [];
 

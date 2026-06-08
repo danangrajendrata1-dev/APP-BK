@@ -77,7 +77,7 @@ export default async function HomeVisitsPage({ searchParams }: PageProps) {
   try {
     [students, result] = await Promise.all([
       getStudentReferences(),
-      getHomeVisits({ page, pageSize: 10, filters }),
+      getHomeVisits({ page, pageSize: 20, filters }),
     ]);
   } catch (error) {
     loadError =

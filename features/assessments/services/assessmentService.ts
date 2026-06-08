@@ -14,8 +14,10 @@ import type {
 } from "@/features/assessments/types/assessment";
 
 const DEFAULT_PAGE = 1;
-const DEFAULT_PAGE_SIZE = 10;
+const DEFAULT_PAGE_SIZE = 20;
 const ASSESSMENT_BUCKET = "assessment-files";
+const ASSESSMENT_LIST_COLUMNS =
+  "id, title, assessment_type, file_path, description, updated_at";
 const ASSESSMENT_ALLOWED_TYPES = [
   "application/pdf",
   "application/msword",
@@ -26,13 +28,17 @@ const ASSESSMENT_ALLOWED_TYPES = [
 ] as const;
 
 type AssessmentRow = Database["public"]["Tables"]["assessment_files"]["Row"];
+type AssessmentListRow = Pick<
+  AssessmentRow,
+  "id" | "title" | "assessment_type" | "file_path" | "description" | "updated_at"
+>;
 type AssessmentInsert = Database["public"]["Tables"]["assessment_files"]["Insert"];
 
 function normalizeText(value: string | null | undefined) {
   return value ?? "";
 }
 
-async function mapAssessment(row: AssessmentRow): Promise<AssessmentFileItem> {
+async function mapAssessment(row: AssessmentListRow): Promise<AssessmentFileItem> {
   const filePath = normalizeText(row.file_path);
   const fileUrl = filePath
     ? ((await createSignedFileUrl(ASSESSMENT_BUCKET, filePath)) ?? "")
@@ -74,7 +80,7 @@ export async function getAssessments(
 
   let query = supabase
     .from("assessment_files")
-    .select("*", { count: "exact" })
+    .select(ASSESSMENT_LIST_COLUMNS, { count: "exact" })
     .order("updated_at", { ascending: false })
     .range(from, to);
 

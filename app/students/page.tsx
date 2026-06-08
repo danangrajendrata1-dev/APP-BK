@@ -56,7 +56,7 @@ export default async function StudentsPage({ searchParams }: StudentsPageProps) 
   try {
     result = await getStudents({
       page,
-      pageSize: 10,
+      pageSize: 20,
       filters,
     });
   } catch (error) {

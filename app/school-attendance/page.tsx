@@ -104,7 +104,7 @@ export default async function SchoolAttendancePage({
       getStudentReferences(),
       getSchoolAttendances({
         page,
-        pageSize: 10,
+        pageSize: 20,
         filters,
       }),
     ]);
