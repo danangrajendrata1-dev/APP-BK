@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 
 import {
@@ -10,8 +9,10 @@ import {
 } from "@/lib/auth/permissions";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
+const LAST_ACTIVITY_STORAGE_KEY = "bk_last_activity_at";
+const LAST_ACTIVITY_COOKIE_NAME = "bk_last_activity_at";
+
 export default function LoginPage() {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
@@ -45,8 +46,14 @@ export default function LoginPage() {
 
       const profileRole = (profile as { role?: string } | null)?.role;
       const role = normalizeRole(profileRole ?? user?.user_metadata?.role);
-      router.replace(getDefaultRouteForRole(role));
-      router.refresh();
+      const destination = getDefaultRouteForRole(role);
+
+      if (typeof window !== "undefined") {
+        const now = String(Date.now());
+        window.localStorage.setItem(LAST_ACTIVITY_STORAGE_KEY, now);
+        document.cookie = `${LAST_ACTIVITY_COOKIE_NAME}=${now}; path=/; max-age=3600; samesite=lax`;
+        window.location.replace(destination);
+      }
     } catch (error) {
       const message =
         error instanceof Error
