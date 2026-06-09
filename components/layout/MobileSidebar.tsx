@@ -68,6 +68,7 @@ export function MobileSidebar({
               <Link
                 key={item.href}
                 href={item.href}
+                prefetch={false}
                 onClick={onClose}
                 className={`flex items-start gap-3 rounded-2xl px-3.5 py-3 transition ${
                   isActive

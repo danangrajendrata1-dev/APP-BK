@@ -40,6 +40,7 @@ export function Sidebar() {
             <Link
               key={item.href}
               href={item.href}
+              prefetch={false}
               className={`flex items-start gap-3 rounded-2xl px-3.5 py-3 transition ${
                 isActive
                   ? "bg-slate-900 text-white shadow-sm"
