@@ -15,7 +15,6 @@ import {
 import {
   createSchoolAttendance,
   getSchoolAttendances,
-  getStudentReferences,
 } from "@/features/school-attendance/services/schoolAttendanceService";
 import type {
   SchoolAttendanceFilters,
@@ -66,7 +65,6 @@ export default async function SchoolAttendancePage({
   const filters = parseFilters(resolvedSearchParams);
   const page = parsePage(getSingleValue(resolvedSearchParams.page));
   let loadError = "";
-  let students: Awaited<ReturnType<typeof getStudentReferences>> = [];
   let result: Awaited<ReturnType<typeof getSchoolAttendances>> | null = null;
 
   async function createSchoolAttendanceAction(
@@ -100,14 +98,11 @@ export default async function SchoolAttendancePage({
   }
 
   try {
-    [students, result] = await Promise.all([
-      getStudentReferences(),
-      getSchoolAttendances({
-        page,
-        pageSize: 20,
-        filters,
-      }),
-    ]);
+    result = await getSchoolAttendances({
+      page,
+      pageSize: 20,
+      filters,
+    });
   } catch (error) {
     loadError =
       error instanceof Error
@@ -138,7 +133,6 @@ export default async function SchoolAttendancePage({
         </CardHeader>
         <CardContent>
           <SchoolAttendanceForm
-            students={students}
             action={createSchoolAttendanceAction}
           />
         </CardContent>

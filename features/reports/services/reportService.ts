@@ -1,4 +1,5 @@
 import { ASSESSMENT_TYPE_OPTIONS } from "@/lib/constants/options";
+import { SCHOOL_ATTENDANCE_STATUS_OPTIONS } from "@/lib/constants/options";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 import type {
@@ -10,6 +11,7 @@ import type {
 } from "@/features/reports/types/report";
 
 const MONTH_LABELS = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+const REPORT_SECTION_ROW_LIMIT = 100;
 
 function toMonthLabel(month: number) {
   return MONTH_LABELS[month - 1] ?? String(month);
@@ -25,6 +27,58 @@ function sortChartItems(items: ChartItem[]) {
 
 function buildTableRows<T extends ReportRow>(rows: T[]) {
   return rows;
+}
+
+function toIsoDate(value: Date) {
+  return value.toISOString().slice(0, 10);
+}
+
+function getMonthPeriodsFromFilters(filters: ReportsFilters) {
+  const currentYear = new Date().getFullYear();
+
+  if (filters.month && filters.year) {
+    return [
+      {
+        label: toMonthLabel(filters.month),
+        start: `${filters.year}-${String(filters.month).padStart(2, "0")}-01`,
+        end: toIsoDate(new Date(filters.year, filters.month, 0)),
+      },
+    ];
+  }
+
+  if (filters.semester && filters.year) {
+    const year = filters.year;
+    const startMonth = filters.semester === 1 ? 1 : 7;
+    return Array.from({ length: 6 }, (_, index) => {
+      const month = startMonth + index;
+      return {
+        label: toMonthLabel(month),
+        start: `${year}-${String(month).padStart(2, "0")}-01`,
+        end: toIsoDate(new Date(year, month, 0)),
+      };
+    });
+  }
+
+  if (filters.year) {
+    const year = filters.year;
+    return Array.from({ length: 12 }, (_, index) => {
+      const month = index + 1;
+      return {
+        label: toMonthLabel(month),
+        start: `${year}-${String(month).padStart(2, "0")}-01`,
+        end: toIsoDate(new Date(year, month, 0)),
+      };
+    });
+  }
+
+  return Array.from({ length: 12 }, (_, index) => {
+    const month = index + 1;
+    return {
+      label: toMonthLabel(month),
+      start: `${currentYear}-${String(month).padStart(2, "0")}-01`,
+      end: toIsoDate(new Date(currentYear, month, 0)),
+    };
+  });
 }
 
 function getDateRange(filters: ReportsFilters) {
@@ -58,6 +112,8 @@ export async function getReportsData(filters: ReportsFilters): Promise<ReportsDa
   const supabase = await createSupabaseServerClient();
   const dateRange = getDateRange(filters);
   const classPattern = filters.className ? `%${filters.className}%` : null;
+  const parentCallPattern = "%Panggilan Orang Tua%";
+  const counselingMonthPeriods = getMonthPeriodsFromFilters(filters);
   const applyClassFilter = <T,>(query: T) =>
     classPattern && "ilike" in (query as object)
       ? (
@@ -86,11 +142,17 @@ export async function getReportsData(filters: ReportsFilters): Promise<ReportsDa
     .from("school_attendance")
     .select("attendance_date, student_name, class_name, status, description");
   attendanceQuery = applyClassFilter(applyDateFilter(attendanceQuery, "attendance_date"));
+  attendanceQuery = attendanceQuery
+    .order("attendance_date", { ascending: false })
+    .limit(REPORT_SECTION_ROW_LIMIT);
 
   let counselingQuery = supabase
     .from("counseling_records")
     .select("counseling_date, student_name, class_name, meeting_number, media, counseling_type, topic, counseling_result, follow_up, description");
   counselingQuery = applyClassFilter(applyDateFilter(counselingQuery, "counseling_date"));
+  counselingQuery = counselingQuery
+    .order("counseling_date", { ascending: false })
+    .limit(REPORT_SECTION_ROW_LIMIT);
 
   let studentAssistanceQuery = supabase
     .from("student_assistances")
@@ -109,21 +171,36 @@ export async function getReportsData(filters: ReportsFilters): Promise<ReportsDa
         ? studentAssistanceQuery.lte("assistance_month", 6)
         : studentAssistanceQuery.gte("assistance_month", 7);
   }
+  studentAssistanceQuery = studentAssistanceQuery
+    .order("assistance_year", { ascending: false })
+    .order("assistance_month", { ascending: false })
+    .order("student_name", { ascending: true })
+    .limit(REPORT_SECTION_ROW_LIMIT);
 
   let classAssistanceQuery = supabase
     .from("class_assistances")
     .select("student_name, class_name, violation_type, action_form, remission, description, final_warning_letter");
   classAssistanceQuery = applyClassFilter(classAssistanceQuery);
+  classAssistanceQuery = classAssistanceQuery
+    .order("student_name", { ascending: true })
+    .limit(REPORT_SECTION_ROW_LIMIT);
 
   let documentsQuery = supabase
     .from("documents")
     .select("document_date, student_name, class_name, document_type, letter_number, description");
   documentsQuery = applyClassFilter(applyDateFilter(documentsQuery, "document_date"));
+  documentsQuery = documentsQuery
+    .ilike("document_type", parentCallPattern)
+    .order("document_date", { ascending: false })
+    .limit(REPORT_SECTION_ROW_LIMIT);
 
   let homeVisitsQuery = supabase
     .from("home_visits")
     .select("visit_date, student_name, class_name, parent_name, address, visit_result, follow_up");
   homeVisitsQuery = applyClassFilter(applyDateFilter(homeVisitsQuery, "visit_date"));
+  homeVisitsQuery = homeVisitsQuery
+    .order("visit_date", { ascending: false })
+    .limit(REPORT_SECTION_ROW_LIMIT);
 
   let studentsQuery = supabase.from("students").select("full_name, class_name, major");
   studentsQuery = applyClassFilter(studentsQuery);
@@ -133,6 +210,87 @@ export async function getReportsData(filters: ReportsFilters): Promise<ReportsDa
     .select("service_date, student_name, class_name");
   bkServiceAttendanceQuery = applyClassFilter(
     applyDateFilter(bkServiceAttendanceQuery, "service_date"),
+  );
+
+  let counselingStatsQuery = supabase
+    .from("counseling_records")
+    .select("student_name, class_name");
+  counselingStatsQuery = applyClassFilter(
+    applyDateFilter(counselingStatsQuery, "counseling_date"),
+  );
+
+  let studentAssistanceStatsQuery = supabase
+    .from("student_assistances")
+    .select("student_name, total, day_1, day_2, day_3, day_4, day_5, day_6, day_7, day_8, day_9, day_10, day_11, day_12, day_13, day_14, day_15, day_16, day_17, day_18, day_19, day_20, day_21, day_22, day_23, day_24, day_25, day_26, day_27, day_28, day_29, day_30, day_31");
+  if (classPattern) {
+    studentAssistanceStatsQuery = studentAssistanceStatsQuery.ilike("class_name", classPattern);
+  }
+  if (filters.year) {
+    studentAssistanceStatsQuery = studentAssistanceStatsQuery.eq("assistance_year", filters.year);
+  }
+  if (filters.month) {
+    studentAssistanceStatsQuery = studentAssistanceStatsQuery.eq("assistance_month", filters.month);
+  } else if (filters.semester) {
+    studentAssistanceStatsQuery =
+      filters.semester === 1
+        ? studentAssistanceStatsQuery.lte("assistance_month", 6)
+        : studentAssistanceStatsQuery.gte("assistance_month", 7);
+  }
+
+  let classAssistanceStatsQuery = supabase
+    .from("class_assistances")
+    .select("violation_type");
+  classAssistanceStatsQuery = applyClassFilter(classAssistanceStatsQuery);
+
+  let attendanceCountQuery = supabase
+    .from("school_attendance")
+    .select("id", { count: "exact", head: true });
+  attendanceCountQuery = applyClassFilter(
+    applyDateFilter(attendanceCountQuery, "attendance_date"),
+  );
+
+  let counselingCountQuery = supabase
+    .from("counseling_records")
+    .select("id", { count: "exact", head: true });
+  counselingCountQuery = applyClassFilter(
+    applyDateFilter(counselingCountQuery, "counseling_date"),
+  );
+
+  let studentAssistanceCountQuery = supabase
+    .from("student_assistances")
+    .select("id", { count: "exact", head: true });
+  if (classPattern) {
+    studentAssistanceCountQuery = studentAssistanceCountQuery.ilike("class_name", classPattern);
+  }
+  if (filters.year) {
+    studentAssistanceCountQuery = studentAssistanceCountQuery.eq("assistance_year", filters.year);
+  }
+  if (filters.month) {
+    studentAssistanceCountQuery = studentAssistanceCountQuery.eq("assistance_month", filters.month);
+  } else if (filters.semester) {
+    studentAssistanceCountQuery =
+      filters.semester === 1
+        ? studentAssistanceCountQuery.lte("assistance_month", 6)
+        : studentAssistanceCountQuery.gte("assistance_month", 7);
+  }
+
+  let classAssistanceCountQuery = supabase
+    .from("class_assistances")
+    .select("id", { count: "exact", head: true });
+  classAssistanceCountQuery = applyClassFilter(classAssistanceCountQuery);
+
+  let parentCallCountQuery = supabase
+    .from("documents")
+    .select("id", { count: "exact", head: true });
+  parentCallCountQuery = applyClassFilter(
+    applyDateFilter(parentCallCountQuery, "document_date"),
+  ).ilike("document_type", parentCallPattern);
+
+  let homeVisitsCountQuery = supabase
+    .from("home_visits")
+    .select("id", { count: "exact", head: true });
+  homeVisitsCountQuery = applyClassFilter(
+    applyDateFilter(homeVisitsCountQuery, "visit_date"),
   );
 
   const [
@@ -145,6 +303,17 @@ export async function getReportsData(filters: ReportsFilters): Promise<ReportsDa
     studentsResult,
     bkServiceAttendanceResult,
     assessmentFilesResult,
+    counselingStatsResult,
+    studentAssistanceStatsResult,
+    classAssistanceStatsResult,
+    attendanceCountResult,
+    counselingCountResult,
+    studentAssistanceCountResult,
+    classAssistanceCountResult,
+    parentCallCountResult,
+    homeVisitsCountResult,
+    attendanceStatusCountResults,
+    counselingPerMonthCountResults,
   ] = await Promise.all([
     attendanceQuery,
     counselingQuery,
@@ -155,6 +324,37 @@ export async function getReportsData(filters: ReportsFilters): Promise<ReportsDa
     studentsQuery,
     bkServiceAttendanceQuery,
     supabase.from("assessment_files").select("assessment_type"),
+    counselingStatsQuery,
+    studentAssistanceStatsQuery,
+    classAssistanceStatsQuery,
+    attendanceCountQuery,
+    counselingCountQuery,
+    studentAssistanceCountQuery,
+    classAssistanceCountQuery,
+    parentCallCountQuery,
+    homeVisitsCountQuery,
+    Promise.all(
+      SCHOOL_ATTENDANCE_STATUS_OPTIONS.map((option) => {
+        let statusCountQuery = supabase
+          .from("school_attendance")
+          .select("id", { count: "exact", head: true });
+        statusCountQuery = applyClassFilter(
+          applyDateFilter(statusCountQuery, "attendance_date"),
+        );
+        return statusCountQuery.eq("status", option.value);
+      }),
+    ),
+    Promise.all(
+      counselingMonthPeriods.map((period) => {
+        let counselingMonthCountQuery = supabase
+          .from("counseling_records")
+          .select("id", { count: "exact", head: true });
+        counselingMonthCountQuery = applyClassFilter(counselingMonthCountQuery);
+        return counselingMonthCountQuery
+          .gte("counseling_date", period.start)
+          .lte("counseling_date", period.end);
+      }),
+    ),
   ]);
 
   if (
@@ -166,7 +366,18 @@ export async function getReportsData(filters: ReportsFilters): Promise<ReportsDa
     homeVisitsResult.error ||
     studentsResult.error ||
     bkServiceAttendanceResult.error ||
-    assessmentFilesResult.error
+    assessmentFilesResult.error ||
+    counselingStatsResult.error ||
+    studentAssistanceStatsResult.error ||
+    classAssistanceStatsResult.error ||
+    attendanceCountResult.error ||
+    counselingCountResult.error ||
+    studentAssistanceCountResult.error ||
+    classAssistanceCountResult.error ||
+    parentCallCountResult.error ||
+    homeVisitsCountResult.error ||
+    attendanceStatusCountResults.some((result) => result.error) ||
+    counselingPerMonthCountResults.some((result) => result.error)
   ) {
     throw new Error("Gagal memuat laporan dan statistik.");
   }
@@ -203,19 +414,7 @@ export async function getReportsData(filters: ReportsFilters): Promise<ReportsDa
       Keterangan: normalize(row.description),
     }));
 
-  const classAssistanceRows = (classAssistanceResult.data ?? [])
-    .map((row) => ({
-      "Nama Siswa": row.student_name,
-      Kelas: row.class_name,
-      "Jenis Pelanggaran": normalize(row.violation_type),
-      "Bentuk Tindakan": normalize(row.action_form),
-      Remisi: normalize(row.remission),
-      Keterangan: normalize(row.description),
-      "SP Akhir": normalize(row.final_warning_letter),
-    }));
-
   const parentCallRows = (documentsResult.data ?? [])
-    .filter((row) => row.document_type.includes("Panggilan Orang Tua"))
     .map((row) => ({
       Tanggal: row.document_date,
       "Nomor Surat": row.letter_number,
@@ -245,55 +444,57 @@ export async function getReportsData(filters: ReportsFilters): Promise<ReportsDa
     "Jumlah Siswa": totalStudents,
   }));
 
+  const attendanceTotal = attendanceCountResult.count ?? 0;
+  const counselingTotal = counselingCountResult.count ?? 0;
+  const studentAssistanceTotal = studentAssistanceCountResult.count ?? 0;
+  const classAssistanceTotal = classAssistanceCountResult.count ?? 0;
+  const parentCallTotal = parentCallCountResult.count ?? 0;
+  const homeVisitTotal = homeVisitsCountResult.count ?? 0;
+
   const semesterRows = [
     {
       Semester: filters.semester ? `Semester ${filters.semester}` : "Semua Semester",
       Tahun: filters.year ?? "Semua Tahun",
-      "Kehadiran Sekolah": attendanceRows.length,
-      Konseling: counselingRows.length,
-      Pendampingan: studentAssistanceRows.length + classAssistanceRows.length,
-      "Pemanggilan Orang Tua": parentCallRows.length,
-      "Home Visit": homeVisitRows.length,
+      "Kehadiran Sekolah": attendanceTotal,
+      Konseling: counselingTotal,
+      Pendampingan: studentAssistanceTotal + classAssistanceTotal,
+      "Pemanggilan Orang Tua": parentCallTotal,
+      "Home Visit": homeVisitTotal,
     },
   ];
 
   const yearlyRows = [
     {
       Tahun: filters.year ?? "Semua Tahun",
-      "Kehadiran Sekolah": attendanceRows.length,
-      Konseling: counselingRows.length,
-      Pendampingan: studentAssistanceRows.length + classAssistanceRows.length,
-      "Pemanggilan Orang Tua": parentCallRows.length,
-      "Home Visit": homeVisitRows.length,
+      "Kehadiran Sekolah": attendanceTotal,
+      Konseling: counselingTotal,
+      Pendampingan: studentAssistanceTotal + classAssistanceTotal,
+      "Pemanggilan Orang Tua": parentCallTotal,
+      "Home Visit": homeVisitTotal,
     },
   ];
-
-  const counselingPerMonthMap = new Map<string, number>();
-  counselingRows.forEach((row) => {
-    const date = new Date(String(row.Tanggal));
-    const key = `${date.getFullYear()}-${date.getMonth() + 1}`;
-    counselingPerMonthMap.set(key, (counselingPerMonthMap.get(key) ?? 0) + 1);
-  });
 
   const studentsMostServedMap = new Map<string, number>();
   (bkServiceAttendanceResult.data ?? []).forEach((row) => {
     studentsMostServedMap.set(row.student_name, (studentsMostServedMap.get(row.student_name) ?? 0) + 1);
   });
-  (counselingResult.data ?? []).forEach((row) => {
+  (counselingStatsResult.data ?? []).forEach((row) => {
     studentsMostServedMap.set(row.student_name, (studentsMostServedMap.get(row.student_name) ?? 0) + 1);
   });
-  (studentAssistanceResult.data ?? []).forEach((row) => {
+  (studentAssistanceStatsResult.data ?? []).forEach((row) => {
     studentsMostServedMap.set(row.student_name, (studentsMostServedMap.get(row.student_name) ?? 0) + (row.total ?? 0));
   });
 
   const attendanceByStatusMap = new Map<string, number>();
-  attendanceRows.forEach((row) => {
-    const status = String(row.Status);
-    attendanceByStatusMap.set(status, (attendanceByStatusMap.get(status) ?? 0) + 1);
+  SCHOOL_ATTENDANCE_STATUS_OPTIONS.forEach((option, index) => {
+    const count = attendanceStatusCountResults[index]?.count ?? 0;
+    if (count > 0) {
+      attendanceByStatusMap.set(option.value, count);
+    }
   });
 
   const topAssistanceTopicsMap = new Map<string, number>();
-  (studentAssistanceResult.data ?? []).forEach((row) => {
+  (studentAssistanceStatsResult.data ?? []).forEach((row) => {
     for (let day = 1; day <= 31; day += 1) {
       const key = row[`day_${day}` as keyof typeof row];
       if (typeof key === "string" && key) {
@@ -301,7 +502,7 @@ export async function getReportsData(filters: ReportsFilters): Promise<ReportsDa
       }
     }
   });
-  (classAssistanceResult.data ?? []).forEach((row) => {
+  (classAssistanceStatsResult.data ?? []).forEach((row) => {
     const violationType = normalize(row.violation_type);
     if (violationType) {
       topAssistanceTopicsMap.set(violationType, (topAssistanceTopicsMap.get(violationType) ?? 0) + 1);
@@ -312,38 +513,38 @@ export async function getReportsData(filters: ReportsFilters): Promise<ReportsDa
   (bkServiceAttendanceResult.data ?? []).forEach((row) => {
     classesMostServedMap.set(row.class_name, (classesMostServedMap.get(row.class_name) ?? 0) + 1);
   });
-  (counselingResult.data ?? []).forEach((row) => {
+  (counselingStatsResult.data ?? []).forEach((row) => {
     classesMostServedMap.set(row.class_name, (classesMostServedMap.get(row.class_name) ?? 0) + 1);
   });
 
   const reportSections: ReportSection[] = [
     {
       title: "Rekap Kehadiran Sekolah",
-      description: "Data kehadiran siswa berdasarkan presensi sekolah.",
+      description: `Data kehadiran siswa berdasarkan presensi sekolah. Menampilkan maksimal ${REPORT_SECTION_ROW_LIMIT} baris terbaru.`,
       columns: ["Tanggal", "Nama Siswa", "Kelas", "Status", "Keterangan"],
       rows: buildTableRows(attendanceRows),
     },
     {
       title: "Rekap Konseling",
-      description: "Ringkasan catatan layanan konseling.",
+      description: `Ringkasan catatan layanan konseling. Menampilkan maksimal ${REPORT_SECTION_ROW_LIMIT} baris terbaru.`,
       columns: ["Tanggal", "Nama Siswa", "Kelas", "Pertemuan Ke-", "Media", "Jenis Konseling", "Topik", "Hasil Konseling", "Tindak Lanjut", "Keterangan"],
       rows: buildTableRows(counselingRows),
     },
     {
       title: "Rekap Pendampingan",
-      description: "Gabungan pendampingan bulanan dan pendampingan per kelas.",
+      description: `Gabungan pendampingan bulanan dan pendampingan per kelas. Menampilkan maksimal ${REPORT_SECTION_ROW_LIMIT} baris terbaru per sumber data.`,
       columns: ["Bulan", "Nama Siswa", "Kelas", "Jumlah", "Keterangan"],
       rows: buildTableRows(studentAssistanceRows),
     },
     {
       title: "Rekap Pemanggilan Orang Tua",
-      description: "Dokumen terkait pemanggilan orang tua.",
+      description: `Dokumen terkait pemanggilan orang tua. Menampilkan maksimal ${REPORT_SECTION_ROW_LIMIT} baris terbaru.`,
       columns: ["Tanggal", "Nomor Surat", "Nama Siswa", "Kelas", "Jenis Surat", "Keterangan"],
       rows: buildTableRows(parentCallRows),
     },
     {
       title: "Rekap Home Visit",
-      description: "Ringkasan pelaksanaan home visit.",
+      description: `Ringkasan pelaksanaan home visit. Menampilkan maksimal ${REPORT_SECTION_ROW_LIMIT} baris terbaru.`,
       columns: ["Tanggal", "Nama Siswa", "Nama Orang Tua/Wali", "Kelas", "Alamat", "Hasil Kunjungan", "Tindak Lanjut"],
       rows: buildTableRows(homeVisitRows),
     },
@@ -371,12 +572,12 @@ export async function getReportsData(filters: ReportsFilters): Promise<ReportsDa
     filters,
     reportSections,
     charts: {
-      counselingPerMonth: [...counselingPerMonthMap.entries()]
-        .sort((a, b) => a[0].localeCompare(b[0]))
-        .map(([key, value]) => {
-          const [, month] = key.split("-");
-          return { label: toMonthLabel(Number(month)), value };
-        }),
+      counselingPerMonth: counselingMonthPeriods
+        .map((period, index) => ({
+          label: period.label,
+          value: counselingPerMonthCountResults[index]?.count ?? 0,
+        }))
+        .filter((item) => item.value > 0),
       studentsMostServed: sortChartItems(
         [...studentsMostServedMap.entries()].map(([label, value]) => ({ label, value })),
       ).slice(0, 10),
@@ -395,11 +596,11 @@ export async function getReportsData(filters: ReportsFilters): Promise<ReportsDa
       available: (assessmentFilesResult.data ?? []).some((item) => item.assessment_type === option.value),
     })),
     summary: {
-      attendanceRows: attendanceRows.length,
-      counselingRows: counselingRows.length,
-      assistanceRows: studentAssistanceRows.length + classAssistanceRows.length,
-      parentCallRows: parentCallRows.length,
-      homeVisitRows: homeVisitRows.length,
+      attendanceRows: attendanceTotal,
+      counselingRows: counselingTotal,
+      assistanceRows: studentAssistanceTotal + classAssistanceTotal,
+      parentCallRows: parentCallTotal,
+      homeVisitRows: homeVisitTotal,
       classRows: classSummaryRows.length,
       semesterRows: semesterRows.length,
       yearlyRows: yearlyRows.length,

@@ -2,6 +2,11 @@
 
 import { useActionState, useState } from "react";
 
+import { ClassSearchSelect } from "@/components/shared/ClassSearchSelect";
+import {
+  StudentSearchSelect,
+  type StudentSearchOption,
+} from "@/components/shared/StudentSearchSelect";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
@@ -9,39 +14,44 @@ import { Textarea } from "@/components/ui/Textarea";
 import { SCHOOL_ATTENDANCE_STATUS_OPTIONS } from "@/lib/constants/options";
 
 import { INITIAL_SCHOOL_ATTENDANCE_FORM_STATE } from "@/features/school-attendance/schemas/schoolAttendanceSchema";
-import type {
-  SchoolAttendanceFormState,
-  StudentReference,
-} from "@/features/school-attendance/types/schoolAttendance";
+import type { SchoolAttendanceFormState } from "@/features/school-attendance/types/schoolAttendance";
 
 type SchoolAttendanceFormProps = {
-  students: StudentReference[];
   action: (
     state: SchoolAttendanceFormState,
     formData: FormData,
   ) => Promise<SchoolAttendanceFormState>;
 };
 
-function buildStudentOptions(students: StudentReference[]) {
-  return students.map((student) => ({
-    label: `${student.fullName} - ${student.className}`,
-    value: student.id,
-  }));
-}
+type SchoolAttendanceFormFieldsProps = {
+  formAction: (
+    formData: FormData,
+  ) => void;
+  isPending: boolean;
+  state: SchoolAttendanceFormState;
+};
 
-export function SchoolAttendanceForm({
-  action,
-  students,
-}: SchoolAttendanceFormProps) {
-  const [state, formAction, isPending] = useActionState(action, {
-    ...INITIAL_SCHOOL_ATTENDANCE_FORM_STATE,
-  });
-  const [selectedStudentId, setSelectedStudentId] = useState(
-    state.values.studentId ?? "",
+function SchoolAttendanceFormFields({
+  formAction,
+  isPending,
+  state,
+}: SchoolAttendanceFormFieldsProps) {
+  const [selectedClass, setSelectedClass] = useState(state.values.className ?? "");
+  const [selectedStudent, setSelectedStudent] = useState<StudentSearchOption | null>(
+    state.values.studentId
+      ? {
+          id: state.values.studentId,
+          fullName: state.values.studentName,
+          nis: "",
+          className: state.values.className,
+        }
+        : null,
   );
-  const selectedStudent = students.find((student) => student.id === selectedStudentId);
-  const className = selectedStudent?.className ?? state.values.className;
-  const studentName = selectedStudent?.fullName ?? state.values.studentName;
+  const [classSearchKey, setClassSearchKey] = useState(0);
+  const [studentSearchKey, setStudentSearchKey] = useState(0);
+  const className = selectedStudent?.className ?? selectedClass;
+  const studentId = selectedStudent?.id ?? "";
+  const studentName = selectedStudent?.fullName ?? "";
 
   return (
     <form action={formAction} className="space-y-5">
@@ -59,21 +69,42 @@ export function SchoolAttendanceForm({
           defaultValue={state.values.attendanceDate}
           error={state.errors.attendanceDate}
         />
-        <Select
-          name="studentId"
+        <StudentSearchSelect
+          key={`student-search-${studentSearchKey}`}
           label="Nama Siswa"
-          options={buildStudentOptions(students)}
-          value={selectedStudentId}
+          selectedClass={selectedClass}
+          value={selectedStudent}
           error={state.errors.studentId}
-          onChange={(event) => setSelectedStudentId(event.target.value)}
-          placeholder="Pilih siswa"
+          hint={
+            selectedClass
+              ? "Pencarian siswa dibatasi ke kelas yang dipilih."
+              : "Cari siswa langsung, atau pilih kelas dulu untuk mempersempit hasil."
+          }
+          onSelectStudent={(student) => {
+            setSelectedStudent(student);
+            if (student) {
+              setSelectedClass(student.className);
+              setClassSearchKey((currentValue) => currentValue + 1);
+            }
+          }}
         />
-        <Input
-          name="classNameDisplay"
+        <ClassSearchSelect
+          key={`class-search-${classSearchKey}`}
           label="Kelas"
           value={className}
-          readOnly
-          hint="Kelas mengikuti data siswa yang dipilih."
+          error={state.errors.className}
+          hint={
+            selectedStudent
+              ? "Kelas mengikuti siswa yang dipilih. Mengubah kelas akan mengosongkan siswa bila tidak sesuai."
+              : "Cari kelas minimal 1 karakter untuk mempersempit pencarian siswa."
+          }
+          onSelectClass={(nextClass) => {
+            setSelectedClass(nextClass);
+            if (selectedStudent && selectedStudent.className !== nextClass) {
+              setSelectedStudent(null);
+              setStudentSearchKey((currentValue) => currentValue + 1);
+            }
+          }}
         />
         <Select
           name="status"
@@ -92,6 +123,7 @@ export function SchoolAttendanceForm({
         </div>
       </div>
 
+      <input type="hidden" name="studentId" value={studentId} />
       <input type="hidden" name="studentName" value={studentName} />
       <input type="hidden" name="className" value={className} />
 
@@ -101,5 +133,31 @@ export function SchoolAttendanceForm({
         </Button>
       </div>
     </form>
+  );
+}
+
+export function SchoolAttendanceForm({
+  action,
+}: SchoolAttendanceFormProps) {
+  const [state, formAction, isPending] = useActionState(action, {
+    ...INITIAL_SCHOOL_ATTENDANCE_FORM_STATE,
+  });
+  const formStateKey = [
+    state.values.attendanceDate,
+    state.values.studentId,
+    state.values.studentName,
+    state.values.className,
+    state.values.status,
+    state.values.description,
+    state.message,
+  ].join("|");
+
+  return (
+    <SchoolAttendanceFormFields
+      key={formStateKey}
+      formAction={formAction}
+      isPending={isPending}
+      state={state}
+    />
   );
 }
