@@ -3,7 +3,6 @@ import { revalidatePath } from "next/cache";
 import { ErrorState } from "@/components/shared/ErrorState";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card";
-import { getStudentReferences } from "@/features/school-attendance/services/schoolAttendanceService";
 import { StudentAssistanceFilter } from "@/features/student-assistances/components/StudentAssistanceFilter";
 import { StudentAssistanceForm } from "@/features/student-assistances/components/StudentAssistanceForm";
 import { StudentAssistanceTable } from "@/features/student-assistances/components/StudentAssistanceTable";
@@ -38,7 +37,6 @@ export default async function StudentAssistancesPage({ searchParams }: PageProps
   const filters = parseFilters(resolvedSearchParams);
   const page = parsePage(getSingleValue(resolvedSearchParams.page));
   let loadError = "";
-  let students: Awaited<ReturnType<typeof getStudentReferences>> = [];
   let result: Awaited<ReturnType<typeof getStudentAssistances>> | null = null;
 
   async function createStudentAssistanceAction(
@@ -61,10 +59,7 @@ export default async function StudentAssistancesPage({ searchParams }: PageProps
   }
 
   try {
-    [students, result] = await Promise.all([
-      getStudentReferences(),
-      getStudentAssistances({ page, pageSize: 20, filters }),
-    ]);
+    result = await getStudentAssistances({ page, pageSize: 20, filters });
   } catch (error) {
     loadError =
       error instanceof Error
@@ -86,7 +81,7 @@ export default async function StudentAssistancesPage({ searchParams }: PageProps
           <CardDescription>Tampilan dibuat menyerupai tabel bulanan agar pengisian kode pendampingan per tanggal tetap mudah dibaca.</CardDescription>
         </CardHeader>
         <CardContent>
-          <StudentAssistanceForm students={students} action={createStudentAssistanceAction} />
+          <StudentAssistanceForm action={createStudentAssistanceAction} />
         </CardContent>
       </Card>
       {loadError ? (

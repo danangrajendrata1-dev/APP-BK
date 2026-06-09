@@ -9,7 +9,6 @@ import { DocumentTable } from "@/features/documents/components/DocumentTable";
 import { createDocumentFormState, INITIAL_DOCUMENT_FORM_STATE, parseDocumentFormData, validateDocumentForm } from "@/features/documents/schemas/documentSchema";
 import { createDocument, getDocuments } from "@/features/documents/services/documentService";
 import type { DocumentFilters, DocumentFormState } from "@/features/documents/types/document";
-import { getStudentReferences } from "@/features/school-attendance/services/schoolAttendanceService";
 import type { DocumentType } from "@/types/common";
 
 type PageProps = {
@@ -43,7 +42,6 @@ export default async function DocumentsPage({ searchParams }: PageProps) {
   const filters = parseFilters(resolvedSearchParams);
   const page = parsePage(getSingleValue(resolvedSearchParams.page));
   let loadError = "";
-  let students: Awaited<ReturnType<typeof getStudentReferences>> = [];
   let result: Awaited<ReturnType<typeof getDocuments>> | null = null;
 
   async function createDocumentAction(
@@ -71,10 +69,7 @@ export default async function DocumentsPage({ searchParams }: PageProps) {
   }
 
   try {
-    [students, result] = await Promise.all([
-      getStudentReferences(),
-      getDocuments({ page, pageSize: 20, filters }),
-    ]);
+    result = await getDocuments({ page, pageSize: 20, filters });
   } catch (error) {
     loadError =
       error instanceof Error
@@ -98,7 +93,7 @@ export default async function DocumentsPage({ searchParams }: PageProps) {
           <CardDescription>File lampiran disimpan ke Supabase Storage bucket `document-files` dan hanya dibuka melalui akses terkontrol.</CardDescription>
         </CardHeader>
         <CardContent>
-          <DocumentForm students={students} action={createDocumentAction} />
+          <DocumentForm action={createDocumentAction} />
         </CardContent>
       </Card>
       {loadError ? (

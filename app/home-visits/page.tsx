@@ -9,7 +9,6 @@ import { HomeVisitTable } from "@/features/home-visits/components/HomeVisitTable
 import { createHomeVisitFormState, INITIAL_HOME_VISIT_FORM_STATE, parseHomeVisitFormData, validateHomeVisitForm } from "@/features/home-visits/schemas/homeVisitSchema";
 import { createHomeVisit, getHomeVisits } from "@/features/home-visits/services/homeVisitService";
 import type { HomeVisitFilters, HomeVisitFormState } from "@/features/home-visits/types/homeVisit";
-import { getStudentReferences } from "@/features/school-attendance/services/schoolAttendanceService";
 
 type PageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -47,7 +46,6 @@ export default async function HomeVisitsPage({ searchParams }: PageProps) {
   const filters = parseFilters(resolvedSearchParams);
   const page = parsePage(getSingleValue(resolvedSearchParams.page));
   let loadError = "";
-  let students: Awaited<ReturnType<typeof getStudentReferences>> = [];
   let result: Awaited<ReturnType<typeof getHomeVisits>> | null = null;
 
   async function createHomeVisitAction(
@@ -75,10 +73,7 @@ export default async function HomeVisitsPage({ searchParams }: PageProps) {
   }
 
   try {
-    [students, result] = await Promise.all([
-      getStudentReferences(),
-      getHomeVisits({ page, pageSize: 20, filters }),
-    ]);
+    result = await getHomeVisits({ page, pageSize: 20, filters });
   } catch (error) {
     loadError =
       error instanceof Error
@@ -102,7 +97,7 @@ export default async function HomeVisitsPage({ searchParams }: PageProps) {
           <CardDescription>Dokumentasi disimpan ke Supabase Storage bucket `home-visit-files` dan hanya dibuka melalui akses terkontrol.</CardDescription>
         </CardHeader>
         <CardContent>
-          <HomeVisitForm students={students} action={createHomeVisitAction} />
+          <HomeVisitForm action={createHomeVisitAction} />
         </CardContent>
       </Card>
       {loadError ? (
