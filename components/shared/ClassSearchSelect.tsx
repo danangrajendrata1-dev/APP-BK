@@ -65,7 +65,7 @@ export function ClassSearchSelect({
       setErrorMessage("");
 
       const { data, error: queryError } = await supabase
-        .from("students")
+        .from("v_student_class_options")
         .select("class_name")
         .ilike("class_name", `%${keyword}%`)
         .order("class_name", { ascending: true })
@@ -82,8 +82,8 @@ export function ClassSearchSelect({
         return;
       }
 
-      const uniqueClassNames = [...new Set((data ?? []).map((item) => item.class_name).filter(Boolean))];
-      setResults(uniqueClassNames);
+      const classRows = (data ?? []) as Array<{ class_name: string | null }>;
+      setResults(classRows.map((item) => item.class_name).filter(Boolean) as string[]);
       setIsLoading(false);
     }
 

@@ -10,11 +10,23 @@ import type {
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_PAGE_SIZE = 20;
-const STUDENT_LIST_COLUMNS =
+const STUDENT_LIST_PAGE_COLUMNS =
+  "id, nisn, full_name, gender, class_name, major, status";
+const STUDENT_DETAIL_COLUMNS =
   "id, nisn, full_name, gender, class_name, major, birth_place_date, address, phone, parent_name, parent_phone, status, created_at, updated_at";
 
 type StudentRow = Database["public"]["Tables"]["students"]["Row"];
 type StudentListRow = Pick<
+  StudentRow,
+  | "id"
+  | "nisn"
+  | "full_name"
+  | "gender"
+  | "class_name"
+  | "major"
+  | "status"
+>;
+type StudentDetailRow = Pick<
   StudentRow,
   | "id"
   | "nisn"
@@ -39,6 +51,25 @@ function normalizeText(value: string | null | undefined) {
 }
 
 function mapStudent(row: StudentListRow): Student {
+  return {
+    id: row.id,
+    nisn: row.nisn,
+    fullName: row.full_name,
+    gender: row.gender,
+    className: row.class_name,
+    major: row.major,
+    birthPlaceDate: "",
+    address: "",
+    phone: "",
+    parentName: "",
+    parentPhone: "",
+    status: row.status,
+    createdAt: "",
+    updatedAt: "",
+  };
+}
+
+function mapStudentDetail(row: StudentDetailRow): Student {
   return {
     id: row.id,
     nisn: row.nisn,
@@ -85,7 +116,7 @@ export async function getStudents(
 
   let query = supabase
     .from("students")
-    .select(STUDENT_LIST_COLUMNS, { count: "exact" })
+    .select(STUDENT_LIST_PAGE_COLUMNS, { count: "exact" })
     .order("full_name", { ascending: true })
     .range(from, to);
 
@@ -133,7 +164,7 @@ export async function getStudentById(id: string): Promise<Student | null> {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("students")
-    .select(STUDENT_LIST_COLUMNS)
+    .select(STUDENT_DETAIL_COLUMNS)
     .eq("id", id)
     .maybeSingle();
 
@@ -141,7 +172,7 @@ export async function getStudentById(id: string): Promise<Student | null> {
     throw new Error("Gagal memuat detail siswa.");
   }
 
-  return data ? mapStudent(data) : null;
+  return data ? mapStudentDetail(data) : null;
 }
 
 export async function createStudent(values: StudentFormValues): Promise<Student> {

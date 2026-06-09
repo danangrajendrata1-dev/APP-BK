@@ -202,7 +202,9 @@ export async function getReportsData(filters: ReportsFilters): Promise<ReportsDa
     .order("visit_date", { ascending: false })
     .limit(REPORT_SECTION_ROW_LIMIT);
 
-  let studentsQuery = supabase.from("students").select("full_name, class_name, major");
+  let studentsQuery = supabase
+    .from("v_student_count_by_class")
+    .select("class_name, total_students");
   studentsQuery = applyClassFilter(studentsQuery);
 
   let bkServiceAttendanceQuery = supabase
@@ -435,13 +437,14 @@ export async function getReportsData(filters: ReportsFilters): Promise<ReportsDa
       "Tindak Lanjut": normalize(row.follow_up),
     }));
 
-  const classSummaryMap = new Map<string, number>();
-  (studentsResult.data ?? []).forEach((row) => {
-    classSummaryMap.set(row.class_name, (classSummaryMap.get(row.class_name) ?? 0) + 1);
-  });
-  const classSummaryRows = [...classSummaryMap.entries()].map(([className, totalStudents]) => ({
-    Kelas: className,
-    "Jumlah Siswa": totalStudents,
+  const classSummaryRows = (
+    (studentsResult.data ?? []) as Array<{
+      class_name: string | null;
+      total_students: number | null;
+    }>
+  ).map((row) => ({
+    Kelas: row.class_name ?? "Tanpa Kelas",
+    "Jumlah Siswa": row.total_students ?? 0,
   }));
 
   const attendanceTotal = attendanceCountResult.count ?? 0;

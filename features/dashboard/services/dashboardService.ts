@@ -12,10 +12,6 @@ function toIsoDate(value: Date) {
   return value.toISOString().slice(0, 10);
 }
 
-function normalizeClassName(value: string | null | undefined) {
-  return value?.trim() ? value : "Tanpa Kelas";
-}
-
 function buildAssistanceMonthRangeFilter(
   startYear: number,
   startMonth: number,
@@ -80,9 +76,10 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
     confessionsResult,
   ] = await Promise.all([
     supabase.from("students").select("id", { count: "exact", head: true }),
-    // TODO: Tahap berikutnya pindahkan agregasi students per class ke SQL view/RPC
-    // agar dashboard tidak perlu mengambil semua nilai class_name lalu menghitung di aplikasi.
-    supabase.from("students").select("class_name"),
+    supabase
+      .from("v_student_count_by_class")
+      .select("class_name, total_students")
+      .order("class_name", { ascending: true }),
     Promise.all(
       monthPeriods.map((period) =>
         supabase
@@ -115,14 +112,11 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
     throw new Error("Gagal memuat ringkasan dashboard.");
   }
 
-  const students = studentsPerClassResult.data ?? [];
+  const studentsPerClassRows = (studentsPerClassResult.data ?? []) as Array<{
+    class_name: string | null;
+    total_students: number | null;
+  }>;
   const assistances = assistanceResult.data ?? [];
-
-  const studentsPerClassMap = new Map<string, number>();
-  students.forEach((student) => {
-    const key = normalizeClassName(student.class_name);
-    studentsPerClassMap.set(key, (studentsPerClassMap.get(key) ?? 0) + 1);
-  });
 
   const assistancePerMonthMap = new Map<string, number>();
   assistances.forEach((record) => {
@@ -172,7 +166,10 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
       },
     ],
     studentsPerClass: sortSeriesDescending(
-      [...studentsPerClassMap.entries()].map(([label, value]) => ({ label, value })),
+      studentsPerClassRows.map((item) => ({
+        label: item.class_name ?? "Tanpa Kelas",
+        value: item.total_students ?? 0,
+      })),
     ),
     counselingPerMonth,
     assistancePerMonth,
