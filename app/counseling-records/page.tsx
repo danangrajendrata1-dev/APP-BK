@@ -14,7 +14,6 @@ import {
 } from "@/features/counseling-records/schemas/counselingRecordSchema";
 import { createCounselingRecord, getCounselingRecords } from "@/features/counseling-records/services/counselingRecordService";
 import type { CounselingRecordFilters, CounselingRecordFormState } from "@/features/counseling-records/types/counselingRecord";
-import { getStudentReferences } from "@/features/school-attendance/services/schoolAttendanceService";
 import type { CounselingMedia, CounselingType } from "@/types/common";
 
 type PageProps = {
@@ -49,7 +48,6 @@ export default async function CounselingRecordsPage({ searchParams }: PageProps)
   const filters = parseFilters(resolvedSearchParams);
   const page = parsePage(getSingleValue(resolvedSearchParams.page));
   let loadError = "";
-  let students: Awaited<ReturnType<typeof getStudentReferences>> = [];
   let result: Awaited<ReturnType<typeof getCounselingRecords>> | null = null;
 
   async function createCounselingRecordAction(
@@ -72,10 +70,7 @@ export default async function CounselingRecordsPage({ searchParams }: PageProps)
   }
 
   try {
-    [students, result] = await Promise.all([
-      getStudentReferences(),
-      getCounselingRecords({ page, pageSize: 20, filters }),
-    ]);
+    result = await getCounselingRecords({ page, pageSize: 20, filters });
   } catch (error) {
     loadError =
       error instanceof Error
@@ -100,7 +95,7 @@ export default async function CounselingRecordsPage({ searchParams }: PageProps)
           <CardDescription>Data sensitif ini tetap berada di area terproteksi untuk admin dan guru BK.</CardDescription>
         </CardHeader>
         <CardContent>
-          <CounselingRecordForm students={students} action={createCounselingRecordAction} />
+          <CounselingRecordForm action={createCounselingRecordAction} />
         </CardContent>
       </Card>
       {loadError ? (

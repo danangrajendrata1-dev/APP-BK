@@ -2,6 +2,11 @@
 
 import { useActionState, useState } from "react";
 
+import { ClassSearchSelect } from "@/components/shared/ClassSearchSelect";
+import {
+  StudentSearchSelect,
+  type StudentSearchOption,
+} from "@/components/shared/StudentSearchSelect";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
@@ -12,33 +17,43 @@ import {
 } from "@/lib/constants/options";
 import { INITIAL_COUNSELING_RECORD_FORM_STATE } from "@/features/counseling-records/schemas/counselingRecordSchema";
 import type { CounselingRecordFormState } from "@/features/counseling-records/types/counselingRecord";
-import type { StudentReference } from "@/features/school-attendance/types/schoolAttendance";
 
 type Props = {
-  students: StudentReference[];
   action: (
     state: CounselingRecordFormState,
     formData: FormData,
   ) => Promise<CounselingRecordFormState>;
 };
 
-function buildStudentOptions(students: StudentReference[]) {
-  return students.map((student) => ({
-    label: `${student.fullName} - ${student.className}`,
-    value: student.id,
-  }));
-}
+type CounselingRecordFormFieldsProps = {
+  formAction: (
+    formData: FormData,
+  ) => void;
+  isPending: boolean;
+  state: CounselingRecordFormState;
+};
 
-export function CounselingRecordForm({ students, action }: Props) {
-  const [state, formAction, isPending] = useActionState(action, {
-    ...INITIAL_COUNSELING_RECORD_FORM_STATE,
-  });
-  const [selectedStudentId, setSelectedStudentId] = useState(
-    state.values.studentId ?? "",
+function CounselingRecordFormFields({
+  formAction,
+  isPending,
+  state,
+}: CounselingRecordFormFieldsProps) {
+  const [selectedClass, setSelectedClass] = useState(state.values.className ?? "");
+  const [selectedStudent, setSelectedStudent] = useState<StudentSearchOption | null>(
+    state.values.studentId
+      ? {
+          id: state.values.studentId,
+          fullName: state.values.studentName,
+          nis: "",
+          className: state.values.className,
+        }
+      : null,
   );
-  const selectedStudent = students.find((student) => student.id === selectedStudentId);
-  const className = selectedStudent?.className ?? state.values.className;
-  const studentName = selectedStudent?.fullName ?? state.values.studentName;
+  const [classSearchKey, setClassSearchKey] = useState(0);
+  const [studentSearchKey, setStudentSearchKey] = useState(0);
+  const className = selectedStudent?.className ?? selectedClass;
+  const studentId = selectedStudent?.id ?? "";
+  const studentName = selectedStudent?.fullName ?? "";
 
   return (
     <form action={formAction} className="space-y-5">
@@ -49,16 +64,43 @@ export function CounselingRecordForm({ students, action }: Props) {
       ) : null}
       <div className="grid gap-5 md:grid-cols-2">
         <Input type="date" name="counselingDate" label="Tanggal" defaultValue={state.values.counselingDate} error={state.errors.counselingDate} />
-        <Select
-          name="studentId"
+        <StudentSearchSelect
+          key={`student-search-${studentSearchKey}`}
           label="Nama Siswa"
-          options={buildStudentOptions(students)}
-          value={selectedStudentId}
+          selectedClass={selectedClass}
+          value={selectedStudent}
           error={state.errors.studentId}
-          onChange={(event) => setSelectedStudentId(event.target.value)}
-          placeholder="Pilih siswa"
+          hint={
+            selectedClass
+              ? "Pencarian siswa dibatasi ke kelas yang dipilih."
+              : "Cari siswa langsung, atau pilih kelas dulu untuk mempersempit hasil."
+          }
+          onSelectStudent={(student) => {
+            setSelectedStudent(student);
+            if (student) {
+              setSelectedClass(student.className);
+              setClassSearchKey((currentValue) => currentValue + 1);
+            }
+          }}
         />
-        <Input name="classNameDisplay" label="Kelas" value={className} readOnly />
+        <ClassSearchSelect
+          key={`class-search-${classSearchKey}`}
+          label="Kelas"
+          value={className}
+          error={state.errors.className}
+          hint={
+            selectedStudent
+              ? "Kelas mengikuti siswa yang dipilih. Mengubah kelas akan mengosongkan siswa bila tidak sesuai."
+              : "Cari kelas minimal 1 karakter untuk mempersempit pencarian siswa."
+          }
+          onSelectClass={(nextClass) => {
+            setSelectedClass(nextClass);
+            if (selectedStudent && selectedStudent.className !== nextClass) {
+              setSelectedStudent(null);
+              setStudentSearchKey((currentValue) => currentValue + 1);
+            }
+          }}
+        />
         <Input type="number" min={1} name="meetingNumber" label="Pertemuan Ke-" defaultValue={state.values.meetingNumber ? String(state.values.meetingNumber) : ""} error={state.errors.meetingNumber} />
         <Select name="media" label="Media" options={[...COUNSELING_MEDIA_OPTIONS]} defaultValue={state.values.media} error={state.errors.media} />
         <Select name="counselingType" label="Jenis Konseling" options={[...COUNSELING_TYPE_OPTIONS]} defaultValue={state.values.counselingType} error={state.errors.counselingType} />
@@ -73,11 +115,41 @@ export function CounselingRecordForm({ students, action }: Props) {
           <Textarea name="description" label="Keterangan" defaultValue={state.values.description} rows={4} />
         </div>
       </div>
+      <input type="hidden" name="studentId" value={studentId} />
       <input type="hidden" name="studentName" value={studentName} />
       <input type="hidden" name="className" value={className} />
       <div className="flex justify-end">
         <Button type="submit" isLoading={isPending}>Simpan Catatan Konseling</Button>
       </div>
     </form>
+  );
+}
+
+export function CounselingRecordForm({ action }: Props) {
+  const [state, formAction, isPending] = useActionState(action, {
+    ...INITIAL_COUNSELING_RECORD_FORM_STATE,
+  });
+  const formStateKey = [
+    state.values.counselingDate,
+    state.values.studentId,
+    state.values.studentName,
+    state.values.className,
+    state.values.meetingNumber,
+    state.values.media,
+    state.values.counselingType,
+    state.values.topic,
+    state.values.counselingResult,
+    state.values.followUp,
+    state.values.description,
+    state.message,
+  ].join("|");
+
+  return (
+    <CounselingRecordFormFields
+      key={formStateKey}
+      formAction={formAction}
+      isPending={isPending}
+      state={state}
+    />
   );
 }
