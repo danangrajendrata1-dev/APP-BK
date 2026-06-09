@@ -5,6 +5,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -125,12 +126,48 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     fullName: "Pengguna",
     isLoading: true,
   });
+  const profileCacheRef = useRef<Record<string, AuthContextValue>>({});
+  const lastResolvedUserIdRef = useRef<string | null>(null);
+  const currentUserRef = useRef<User | null>(null);
+
+  useEffect(() => {
+    currentUserRef.current = authState.user;
+  }, [authState.user]);
 
   useEffect(() => {
     let isMounted = true;
 
+    async function resolveAuthState(user: User | null) {
+      if (!user) {
+        lastResolvedUserIdRef.current = null;
+        return {
+          user: null,
+          role: "siswa",
+          fullName: "Pengguna",
+          isLoading: false,
+        } satisfies AuthContextValue;
+      }
+
+      const cachedState = profileCacheRef.current[user.id];
+
+      if (cachedState) {
+        lastResolvedUserIdRef.current = user.id;
+        return {
+          ...cachedState,
+          user,
+        };
+      }
+
+      const nextState = await buildAuthState(user);
+      profileCacheRef.current[user.id] = nextState;
+      lastResolvedUserIdRef.current = user.id;
+      return nextState;
+    }
+
     async function signOutForIdleTimeout() {
       await supabase.auth.signOut();
+      profileCacheRef.current = {};
+      lastResolvedUserIdRef.current = null;
       clearLastActivity();
 
       if (typeof window !== "undefined") {
@@ -166,10 +203,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (user) {
         writeLastActivity(getNow());
       } else {
+        profileCacheRef.current = {};
+        lastResolvedUserIdRef.current = null;
         clearLastActivity();
       }
 
-      const nextState = await buildAuthState(user);
+      const nextState = await resolveAuthState(user);
 
       if (isMounted) {
         setAuthState(nextState);
@@ -187,12 +226,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         if (event === "SIGNED_OUT") {
+          profileCacheRef.current = {};
+          lastResolvedUserIdRef.current = null;
           clearLastActivity();
         } else if (session?.user) {
           writeLastActivity(getNow());
         }
 
-        const nextState = await buildAuthState(session?.user ?? null);
+        const nextUser = session?.user ?? null;
+
+        if (nextUser?.id && lastResolvedUserIdRef.current === nextUser.id) {
+          if (isMounted) {
+            setAuthState((currentState) => ({
+              ...currentState,
+              user: nextUser,
+              isLoading: false,
+            }));
+          }
+          return;
+        }
+
+        const nextState = await resolveAuthState(nextUser);
 
         if (isMounted) {
           setAuthState(nextState);
@@ -209,7 +263,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     ];
 
     function recordActivity() {
-      if (!authState.user) {
+      if (!currentUserRef.current) {
         return;
       }
 
@@ -259,7 +313,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [authState.user, supabase]);
+  }, [supabase]);
 
   return <AuthContext.Provider value={authState}>{children}</AuthContext.Provider>;
 }
