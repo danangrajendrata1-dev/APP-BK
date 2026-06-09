@@ -12,6 +12,10 @@ function toIsoDate(value: Date) {
   return value.toISOString().slice(0, 10);
 }
 
+function normalizeClassName(value: string | null | undefined) {
+  return value?.trim() ? value : "Tanpa Kelas";
+}
+
 function buildAssistanceMonthRangeFilter(
   startYear: number,
   startMonth: number,
@@ -76,7 +80,8 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
     confessionsResult,
   ] = await Promise.all([
     supabase.from("students").select("id", { count: "exact", head: true }),
-    // TODO: Tetap perlu SQL view/RPC untuk agregasi per kelas tanpa mengambil semua baris.
+    // TODO: Tahap berikutnya pindahkan agregasi students per class ke SQL view/RPC
+    // agar dashboard tidak perlu mengambil semua nilai class_name lalu menghitung di aplikasi.
     supabase.from("students").select("class_name"),
     Promise.all(
       monthPeriods.map((period) =>
@@ -90,7 +95,8 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
     supabase
       .from("student_assistances")
       .select("assistance_month, assistance_year, total")
-      // TODO: Tetap perlu SQL view/RPC untuk agregasi per bulan tanpa mengambil semua baris pada rentang ini.
+      // TODO: Tahap berikutnya pindahkan agregasi assistance per month ke SQL view/RPC
+      // agar dashboard tidak perlu mengambil semua baris dalam rentang bulan lalu menjumlahkannya di aplikasi.
       .or(assistanceRangeFilter),
     supabase.from("documents").select("id", { count: "exact", head: true }),
     supabase.from("home_visits").select("id", { count: "exact", head: true }),
@@ -114,7 +120,7 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
 
   const studentsPerClassMap = new Map<string, number>();
   students.forEach((student) => {
-    const key = student.class_name;
+    const key = normalizeClassName(student.class_name);
     studentsPerClassMap.set(key, (studentsPerClassMap.get(key) ?? 0) + 1);
   });
 
