@@ -20,7 +20,6 @@ import type {
   BkServiceAttendanceFilters,
   BkServiceAttendanceFormState,
 } from "@/features/bk-service-attendance/types/bkServiceAttendance";
-import { getStudentReferences } from "@/features/school-attendance/services/schoolAttendanceService";
 import type { BkServicePurpose, BkServiceType } from "@/types/common";
 
 type BkServiceAttendancePageProps = {
@@ -72,7 +71,6 @@ export default async function BkServiceAttendancePage({
   const filters = parseFilters(resolvedSearchParams);
   const page = parsePage(getSingleValue(resolvedSearchParams.page));
   let loadError = "";
-  let students: Awaited<ReturnType<typeof getStudentReferences>> = [];
   let result: Awaited<ReturnType<typeof getBkServiceAttendances>> | null = null;
 
   async function createBkServiceAttendanceAction(
@@ -108,14 +106,11 @@ export default async function BkServiceAttendancePage({
   }
 
   try {
-    [students, result] = await Promise.all([
-      getStudentReferences(),
-      getBkServiceAttendances({
-        page,
-        pageSize: 20,
-        filters,
-      }),
-    ]);
+    result = await getBkServiceAttendances({
+      page,
+      pageSize: 20,
+      filters,
+    });
   } catch (error) {
     loadError =
       error instanceof Error
@@ -148,7 +143,6 @@ export default async function BkServiceAttendancePage({
         </CardHeader>
         <CardContent>
           <BkServiceAttendanceForm
-            students={students}
             action={createBkServiceAttendanceAction}
           />
         </CardContent>
