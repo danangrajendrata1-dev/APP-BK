@@ -66,7 +66,7 @@ export default function LoginPage() {
           </p>
           <h1 className="text-3xl font-semibold text-slate-900">Login</h1>
           <p className="text-sm text-slate-600">
-            Masuk menggunakan akun Anda untuk melanjutkan.
+            Masuk untuk mengelola data dan layanan BK sekolah.
           </p>
         </div>
 
@@ -106,7 +106,7 @@ export default function LoginPage() {
             disabled={isLoading}
             className="w-full rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {isLoading ? "Memproses..." : "Login"}
+            {isLoading ? "Memproses..." : "Masuk"}
           </button>
         </form>
 

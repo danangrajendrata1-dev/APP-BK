@@ -13,6 +13,11 @@ import type { User } from "@supabase/supabase-js";
 import { normalizeRole, type AppRole } from "@/lib/auth/permissions";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
+const IDLE_TIMEOUT_MS = 60 * 60 * 1000;
+const LAST_ACTIVITY_STORAGE_KEY = "bk_last_activity_at";
+const LAST_ACTIVITY_COOKIE_NAME = "bk_last_activity_at";
+const ACTIVITY_UPDATE_INTERVAL_MS = 60 * 1000;
+
 type AuthContextValue = {
   fullName: string;
   isLoading: boolean;
@@ -26,6 +31,60 @@ type ProfileRow = {
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
+
+function getNow() {
+  return Date.now();
+}
+
+function writeLastActivity(timestamp: number) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const value = String(timestamp);
+  window.localStorage.setItem(LAST_ACTIVITY_STORAGE_KEY, value);
+  document.cookie = `${LAST_ACTIVITY_COOKIE_NAME}=${value}; path=/; max-age=3600; samesite=lax`;
+}
+
+function clearLastActivity() {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.localStorage.removeItem(LAST_ACTIVITY_STORAGE_KEY);
+  document.cookie = `${LAST_ACTIVITY_COOKIE_NAME}=; path=/; max-age=0; samesite=lax`;
+}
+
+function readLastActivity() {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  const localValue = window.localStorage.getItem(LAST_ACTIVITY_STORAGE_KEY);
+  const parsedLocalValue = Number(localValue);
+
+  if (Number.isFinite(parsedLocalValue) && parsedLocalValue > 0) {
+    return parsedLocalValue;
+  }
+
+  const cookieValue = document.cookie
+    .split("; ")
+    .find((item) => item.startsWith(`${LAST_ACTIVITY_COOKIE_NAME}=`))
+    ?.split("=")[1];
+  const parsedCookieValue = Number(cookieValue);
+
+  return Number.isFinite(parsedCookieValue) && parsedCookieValue > 0
+    ? parsedCookieValue
+    : null;
+}
+
+function isSessionExpired(lastActivityAt: number | null) {
+  if (!lastActivityAt) {
+    return false;
+  }
+
+  return getNow() - lastActivityAt > IDLE_TIMEOUT_MS;
+}
 
 async function buildAuthState(user: User | null): Promise<AuthContextValue> {
   if (!user) {
@@ -70,13 +129,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let isMounted = true;
 
+    async function signOutForIdleTimeout() {
+      await supabase.auth.signOut();
+      clearLastActivity();
+
+      if (typeof window !== "undefined") {
+        const loginUrl = new URL("/login", window.location.origin);
+        loginUrl.searchParams.set("reason", "idle-timeout");
+        window.location.replace(loginUrl.toString());
+      }
+    }
+
     async function bootstrap() {
+      if (isSessionExpired(readLastActivity())) {
+        if (isMounted) {
+          setAuthState({
+            user: null,
+            role: "siswa",
+            fullName: "Pengguna",
+            isLoading: false,
+          });
+        }
+
+        await signOutForIdleTimeout();
+        return;
+      }
+
       const {
         data: { user },
       } = await supabase.auth.getUser();
 
       if (!isMounted) {
         return;
+      }
+
+      if (user) {
+        writeLastActivity(getNow());
+      } else {
+        clearLastActivity();
       }
 
       const nextState = await buildAuthState(user);
@@ -90,10 +180,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
       void (async () => {
         if (!isMounted) {
           return;
+        }
+
+        if (event === "SIGNED_OUT") {
+          clearLastActivity();
+        } else if (session?.user) {
+          writeLastActivity(getNow());
         }
 
         const nextState = await buildAuthState(session?.user ?? null);
@@ -104,11 +200,66 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       })();
     });
 
+    let lastRecordedActivityAt = readLastActivity();
+    const activityEvents: Array<keyof WindowEventMap> = [
+      "pointerdown",
+      "keydown",
+      "scroll",
+      "touchstart",
+    ];
+
+    function recordActivity() {
+      if (!authState.user) {
+        return;
+      }
+
+      const now = getNow();
+
+      if (
+        lastRecordedActivityAt &&
+        now - lastRecordedActivityAt < ACTIVITY_UPDATE_INTERVAL_MS
+      ) {
+        return;
+      }
+
+      lastRecordedActivityAt = now;
+      writeLastActivity(now);
+    }
+
+    function handleVisibilityChange() {
+      if (document.visibilityState === "visible") {
+        const lastActivityAt = readLastActivity();
+
+        if (isSessionExpired(lastActivityAt)) {
+          void signOutForIdleTimeout();
+          return;
+        }
+
+        recordActivity();
+      }
+    }
+
+    const intervalId = window.setInterval(() => {
+      if (isSessionExpired(readLastActivity())) {
+        void signOutForIdleTimeout();
+      }
+    }, 60 * 1000);
+
+    activityEvents.forEach((eventName) => {
+      window.addEventListener(eventName, recordActivity, { passive: true });
+    });
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
     return () => {
       isMounted = false;
       subscription.unsubscribe();
+      window.clearInterval(intervalId);
+      activityEvents.forEach((eventName) => {
+        window.removeEventListener(eventName, recordActivity);
+      });
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [supabase]);
+  }, [authState.user, supabase]);
 
   return <AuthContext.Provider value={authState}>{children}</AuthContext.Provider>;
 }

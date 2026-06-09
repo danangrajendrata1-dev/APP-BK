@@ -8,6 +8,9 @@ import {
   normalizeRole,
 } from "@/lib/auth/permissions";
 
+const IDLE_TIMEOUT_MS = 60 * 60 * 1000;
+const LAST_ACTIVITY_COOKIE_NAME = "bk_last_activity_at";
+
 function getSupabaseEnv() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -21,6 +24,22 @@ function getSupabaseEnv() {
   return { url, anonKey };
 }
 
+function hasExpiredByIdleTimeout(request: NextRequest) {
+  const lastActivityValue = Number(
+    request.cookies.get(LAST_ACTIVITY_COOKIE_NAME)?.value ?? "",
+  );
+
+  return Number.isFinite(lastActivityValue) && Date.now() - lastActivityValue > IDLE_TIMEOUT_MS;
+}
+
+function clearSessionCookies(request: NextRequest, response: NextResponse) {
+  request.cookies.getAll().forEach(({ name }) => {
+    if (name.startsWith("sb-") || name === LAST_ACTIVITY_COOKIE_NAME) {
+      response.cookies.set(name, "", { maxAge: 0, path: "/" });
+    }
+  });
+}
+
 export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
@@ -31,6 +50,20 @@ export async function proxy(request: NextRequest) {
   }
 
   const response = NextResponse.next({ request });
+
+  if (hasExpiredByIdleTimeout(request)) {
+    if (isProtectedRoute(pathname)) {
+      const loginUrl = request.nextUrl.clone();
+      loginUrl.pathname = "/login";
+      loginUrl.searchParams.set("reason", "idle-timeout");
+      const redirectResponse = NextResponse.redirect(loginUrl);
+      clearSessionCookies(request, redirectResponse);
+      return redirectResponse;
+    }
+
+    clearSessionCookies(request, response);
+    return response;
+  }
 
   const { url, anonKey } = getSupabaseEnv();
   const supabase = createServerClient(url, anonKey, {
