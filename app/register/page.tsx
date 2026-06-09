@@ -69,10 +69,9 @@ export default function RegisterPage() {
           <p className="text-sm font-medium uppercase tracking-[0.24em] text-slate-500">
             Aplikasi BK
           </p>
-          <h1 className="text-3xl font-semibold text-slate-900">Register</h1>
+          <h1 className="text-3xl font-semibold text-slate-900">Daftar</h1>
           <p className="text-sm text-slate-600">
-            Registrasi publik hanya membuat akun <strong>siswa</strong>. Role
-            guru BK dan admin ditetapkan manual untuk keamanan.
+            Buat akun siswa untuk mulai menggunakan layanan BK.
           </p>
         </div>
 

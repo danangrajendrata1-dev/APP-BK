@@ -49,7 +49,7 @@ export default async function ReportsPage({ searchParams }: PageProps) {
 
   return (
     <section className="space-y-6">
-      <PageHeader title="Laporan dan Statistik" description="Semua laporan dan grafik yang diwajibkan PRD ditampilkan di sini dengan filter bulan, semester, tahun, dan kelas jika relevan." />
+      <PageHeader title="Laporan dan Statistik" description="Lihat ringkasan laporan, grafik, dan statistik layanan BK." />
       {loadError ? (
         <ErrorState description={loadError} />
       ) : reports ? (
@@ -60,7 +60,7 @@ export default async function ReportsPage({ searchParams }: PageProps) {
           <Card>
             <CardHeader>
               <CardTitle>Kelengkapan File Inventori dan Asesmen</CardTitle>
-              <CardDescription>Checklist ketersediaan file asesmen yang wajib tersedia sesuai PRD.</CardDescription>
+              <CardDescription>Cek ketersediaan file inventori dan asesmen.</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">

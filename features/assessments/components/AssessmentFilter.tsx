@@ -14,7 +14,7 @@ export function AssessmentFilter({ filters }: Props) {
     <Card>
       <CardHeader>
         <CardTitle>Filter Inventori dan Asesmen</CardTitle>
-        <CardDescription>Saring daftar file berdasarkan jenis asesmen yang diwajibkan PRD.</CardDescription>
+        <CardDescription>Saring daftar file berdasarkan jenis asesmen.</CardDescription>
       </CardHeader>
       <CardContent>
         <form className="grid gap-4 md:grid-cols-[1fr_auto_auto] md:items-end">

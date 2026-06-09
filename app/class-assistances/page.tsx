@@ -74,11 +74,11 @@ export default async function ClassAssistancesPage({ searchParams }: PageProps) 
   }).toString();
   return (
     <section className="space-y-6">
-      <PageHeader title="Daftar Pendampingan Siswa Per Kelas" description="Catat daftar pendampingan per kelas sesuai PRD dan saring data berdasarkan kelas, jenis pelanggaran, serta SP akhir." />
+      <PageHeader title="Daftar Pendampingan Siswa Per Kelas" description="Kelola catatan pendampingan siswa per kelas." />
       <Card>
         <CardHeader>
           <CardTitle>Input Daftar Pendampingan Per Kelas</CardTitle>
-          <CardDescription>Data ini tetap berada pada area terproteksi untuk admin dan guru BK.</CardDescription>
+          <CardDescription>Catat data pendampingan siswa berdasarkan kelas.</CardDescription>
         </CardHeader>
         <CardContent>
           <ClassAssistanceForm action={createClassAssistanceAction} />

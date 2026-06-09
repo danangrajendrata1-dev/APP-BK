@@ -131,7 +131,7 @@ export default async function BkServiceAttendancePage({
     <section className="space-y-6">
       <PageHeader
         title="Presensi Layanan BK"
-        description="Catat kunjungan siswa ke layanan BK sesuai PRD, gunakan referensi data siswa, dan saring data berdasarkan bulan, tahun, kelas, keperluan, jenis layanan, serta guru BK."
+        description="Catat kunjungan siswa ke layanan BK dan saring data sesuai kebutuhan."
       />
 
       <Card>

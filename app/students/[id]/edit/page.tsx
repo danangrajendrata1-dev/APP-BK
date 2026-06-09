@@ -99,7 +99,7 @@ export default async function EditStudentPage({
     <section className="space-y-6">
       <PageHeader
         title="Edit Data Siswa"
-        description="Perbarui data induk siswa tanpa mengubah struktur field yang sudah ditetapkan pada PRD."
+        description="Perbarui data siswa yang sudah tersimpan."
       />
 
       <Card>

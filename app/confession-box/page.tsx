@@ -102,11 +102,11 @@ export default async function ConfessionBoxPage({ searchParams }: PageProps) {
 
   return (
     <section className="space-y-6">
-      <PageHeader title="Kotak Curhat Digital" description="Siswa dapat mengirim curhat digital sesuai PRD, sementara admin dan guru BK dapat memantau data curhat melalui area terproteksi." />
+      <PageHeader title="Kotak Curhat Digital" description="Siswa dapat menyampaikan curhat secara online, dan guru BK dapat menindaklanjutinya." />
       <Card>
         <CardHeader>
           <CardTitle>Form Kotak Curhat Digital</CardTitle>
-          <CardDescription>Nama siswa bersifat opsional sesuai PRD. Isi curhat hanya dapat diakses sesuai aturan role dan RLS.</CardDescription>
+          <CardDescription>Nama siswa boleh dikosongkan jika ingin menyampaikan curhat tanpa identitas.</CardDescription>
         </CardHeader>
         <CardContent>
           <ConfessionForm action={createConfessionAction} />
@@ -121,7 +121,7 @@ export default async function ConfessionBoxPage({ searchParams }: PageProps) {
             result={result}
             queryString={queryString}
             title={role === "siswa" ? "Riwayat Curhat Saya" : "Daftar Curhat Digital"}
-            description={role === "siswa" ? "Hanya data curhat milik Anda yang ditampilkan." : "Admin dan guru BK dapat melihat seluruh data curhat digital."}
+            description={role === "siswa" ? "Daftar curhat yang pernah Anda kirim." : "Daftar curhat yang masuk ke layanan BK."}
           />
         </>
       ) : null}

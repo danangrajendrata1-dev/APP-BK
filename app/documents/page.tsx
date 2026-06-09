@@ -86,11 +86,11 @@ export default async function DocumentsPage({ searchParams }: PageProps) {
 
   return (
     <section className="space-y-6">
-      <PageHeader title="Surat & Dokumen" description="Kelola surat dan dokumen BK sesuai PRD, termasuk upload file lampiran ke penyimpanan aman dan filter berdasarkan tanggal, jenis surat, nama siswa, serta kelas." />
+      <PageHeader title="Surat & Dokumen" description="Kelola surat dan dokumen BK, lalu cari data berdasarkan tanggal, jenis surat, nama siswa, atau kelas." />
       <Card>
         <CardHeader>
           <CardTitle>Input Surat & Dokumen</CardTitle>
-          <CardDescription>File lampiran disimpan ke Supabase Storage bucket `document-files` dan hanya dibuka melalui akses terkontrol.</CardDescription>
+          <CardDescription>Unggah lampiran surat atau dokumen yang diperlukan.</CardDescription>
         </CardHeader>
         <CardContent>
           <DocumentForm action={createDocumentAction} />

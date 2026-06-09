@@ -121,7 +121,7 @@ export default async function SchoolAttendancePage({
     <section className="space-y-6">
       <PageHeader
         title="Presensi Sekolah"
-        description="Catat kehadiran siswa per tanggal sesuai PRD, gunakan referensi data siswa, dan saring data berdasarkan bulan, tahun, kelas, serta status."
+        description="Catat kehadiran siswa per tanggal dan saring data berdasarkan bulan, tahun, kelas, serta status."
       />
 
       <Card>

@@ -74,11 +74,11 @@ export default async function StudentAssistancesPage({ searchParams }: PageProps
   }).toString();
   return (
     <section className="space-y-6">
-      <PageHeader title="Catatan Pendampingan Siswa Per Bulan" description="Kelola catatan pendampingan bulanan sesuai PRD, tampilkan tanggal 1 sampai 31, dan hitung jumlah otomatis dari isian kode pendampingan." />
+      <PageHeader title="Catatan Pendampingan Siswa Per Bulan" description="Kelola catatan pendampingan siswa secara bulanan." />
       <Card>
         <CardHeader>
           <CardTitle>Input Pendampingan Siswa Per Bulan</CardTitle>
-          <CardDescription>Tampilan dibuat menyerupai tabel bulanan agar pengisian kode pendampingan per tanggal tetap mudah dibaca.</CardDescription>
+          <CardDescription>Isi kode pendampingan siswa berdasarkan tanggal.</CardDescription>
         </CardHeader>
         <CardContent>
           <StudentAssistanceForm action={createStudentAssistanceAction} />

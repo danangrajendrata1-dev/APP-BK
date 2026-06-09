@@ -90,11 +90,11 @@ export default async function HomeVisitsPage({ searchParams }: PageProps) {
 
   return (
     <section className="space-y-6">
-      <PageHeader title="Home Visit" description="Kelola data home visit sesuai PRD, termasuk upload dokumentasi ke penyimpanan aman dan filter berdasarkan bulan, tahun, kelas, serta nama siswa." />
+      <PageHeader title="Home Visit" description="Kelola data home visit dan cari data berdasarkan bulan, tahun, kelas, atau nama siswa." />
       <Card>
         <CardHeader>
           <CardTitle>Input Home Visit</CardTitle>
-          <CardDescription>Dokumentasi disimpan ke Supabase Storage bucket `home-visit-files` dan hanya dibuka melalui akses terkontrol.</CardDescription>
+          <CardDescription>Unggah dokumentasi home visit bila diperlukan.</CardDescription>
         </CardHeader>
         <CardContent>
           <HomeVisitForm action={createHomeVisitAction} />

@@ -39,7 +39,7 @@ function ProtectedAppShell({ children }: AppLayoutProps) {
 
   return (
     <div className="min-h-screen bg-slate-100">
-      <div className="flex min-h-screen">
+      <div className="flex min-h-screen items-start bg-slate-100">
         <Sidebar />
         <MobileSidebar
           isOpen={isMobileMenuOpen}
@@ -49,7 +49,7 @@ function ProtectedAppShell({ children }: AppLayoutProps) {
           }}
         />
 
-        <div className="flex min-h-screen min-w-0 flex-1 flex-col">
+        <div className="flex min-h-screen min-w-0 flex-1 flex-col bg-slate-100">
           <Topbar
             onOpenMenu={() => {
               setIsMenuOpen(true);
@@ -57,7 +57,7 @@ function ProtectedAppShell({ children }: AppLayoutProps) {
             }}
           />
 
-          <main className="flex-1 overflow-x-hidden px-4 py-5 md:px-6 md:py-6">
+          <main className="flex-1 overflow-x-hidden bg-slate-100 px-3 py-4 sm:px-4 md:px-5 md:py-5 lg:px-6">
             <div className="mx-auto w-full max-w-7xl">
               {canAccessCurrentPath ? children : null}
             </div>

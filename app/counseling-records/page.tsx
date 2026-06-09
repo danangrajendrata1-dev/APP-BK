@@ -88,11 +88,11 @@ export default async function CounselingRecordsPage({ searchParams }: PageProps)
 
   return (
     <section className="space-y-6">
-      <PageHeader title="Catatan Konseling" description="Catat layanan konseling sesuai PRD, gunakan referensi data siswa, dan saring data berdasarkan bulan, tahun, kelas, media, serta jenis konseling." />
+      <PageHeader title="Catatan Konseling" description="Catat layanan konseling siswa dan saring data sesuai kebutuhan." />
       <Card>
         <CardHeader>
           <CardTitle>Input Catatan Konseling</CardTitle>
-          <CardDescription>Data sensitif ini tetap berada di area terproteksi untuk admin dan guru BK.</CardDescription>
+          <CardDescription>Isi catatan konseling siswa dengan ringkas dan jelas.</CardDescription>
         </CardHeader>
         <CardContent>
           <CounselingRecordForm action={createCounselingRecordAction} />

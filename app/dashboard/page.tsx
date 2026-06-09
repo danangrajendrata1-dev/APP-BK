@@ -16,7 +16,7 @@ export default async function DashboardPage() {
 
   return (
     <section className="space-y-6">
-      <PageHeader title="Dashboard" description="Ringkasan data aplikasi BK diambil otomatis dari database sesuai indikator PRD, tanpa angka dummy permanen." />
+      <PageHeader title="Dashboard" description="Lihat ringkasan data, grafik, dan statistik layanan BK." />
       {loadError ? (
         <ErrorState description={loadError} />
       ) : summary ? (
@@ -24,8 +24,8 @@ export default async function DashboardPage() {
           <DashboardMetricGrid metrics={summary.metrics} />
           <div className="grid gap-6 xl:grid-cols-3">
             <DashboardSeriesCard title="Jumlah Siswa Per Kelas" description="Distribusi jumlah siswa berdasarkan kelas." series={summary.studentsPerClass} />
-            <DashboardSeriesCard title="Jumlah Konseling Per Bulan" description="Total catatan konseling per bulan dari data aktual." series={summary.counselingPerMonth} />
-            <DashboardSeriesCard title="Jumlah Pendampingan Per Bulan" description="Akumulasi total pendampingan per bulan dari data aktual." series={summary.assistancePerMonth} />
+            <DashboardSeriesCard title="Jumlah Konseling Per Bulan" description="Jumlah catatan konseling setiap bulan." series={summary.counselingPerMonth} />
+            <DashboardSeriesCard title="Jumlah Pendampingan Per Bulan" description="Jumlah pendampingan siswa setiap bulan." series={summary.assistancePerMonth} />
           </div>
         </>
       ) : null}

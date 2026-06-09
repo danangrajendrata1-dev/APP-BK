@@ -27,7 +27,7 @@ export function AssessmentTable({ result, queryString }: Props) {
     <Card>
       <CardHeader>
         <CardTitle>Daftar File Asesmen Wajib</CardTitle>
-        <CardDescription>Semua file yang diwajibkan PRD harus tersedia dan dapat diakses sesuai hak role.</CardDescription>
+        <CardDescription>Pastikan file asesmen yang dibutuhkan sudah tersedia.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-5">
         <Table>

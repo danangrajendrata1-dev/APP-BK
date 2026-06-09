@@ -66,7 +66,7 @@ export default function LoginPage() {
           </p>
           <h1 className="text-3xl font-semibold text-slate-900">Login</h1>
           <p className="text-sm text-slate-600">
-            Masuk menggunakan akun Supabase Auth Anda.
+            Masuk menggunakan akun Anda untuk melanjutkan.
           </p>
         </div>
 

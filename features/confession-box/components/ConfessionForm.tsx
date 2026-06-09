@@ -31,7 +31,7 @@ export function ConfessionForm({ action }: Props) {
       ) : null}
       <div className="grid gap-5 md:grid-cols-2">
         <Input type="date" name="confessionDate" label="Tanggal" defaultValue={state.values.confessionDate} error={state.errors.confessionDate} />
-        <Input name="studentName" label="Nama Siswa (Opsional)" defaultValue={state.values.studentName} hint="Boleh dikosongkan sesuai PRD." />
+        <Input name="studentName" label="Nama Siswa (Opsional)" defaultValue={state.values.studentName} hint="Boleh dikosongkan jika ingin tetap anonim." />
         <Input name="className" label="Kelas" defaultValue={state.values.className} error={state.errors.className} />
         <Select name="category" label="Kategori" options={[...CONFESSION_CATEGORY_OPTIONS]} defaultValue={state.values.category} error={state.errors.category} />
         <div className="md:col-span-2">

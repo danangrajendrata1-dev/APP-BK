@@ -75,11 +75,11 @@ export default async function AssessmentsPage({ searchParams }: PageProps) {
 
   return (
     <section className="space-y-6">
-      <PageHeader title="Inventori dan Asesmen" description="Kelola file inventori dan asesmen wajib sesuai PRD, termasuk upload file ke storage aman dan pemantauan ketersediaan seluruh file yang dibutuhkan." />
+      <PageHeader title="Inventori dan Asesmen" description="Kelola file inventori dan asesmen BK serta pantau kelengkapannya." />
       <Card>
         <CardHeader>
           <CardTitle>Upload File Asesmen</CardTitle>
-          <CardDescription>Admin dan guru BK dapat mengunggah file asesmen ke bucket `assessment-files` agar bisa dilihat dan diunduh sesuai hak akses.</CardDescription>
+          <CardDescription>Unggah file asesmen agar mudah disimpan, dilihat, dan diunduh saat dibutuhkan.</CardDescription>
         </CardHeader>
         <CardContent>
           <AssessmentUploadForm action={createAssessmentAction} />

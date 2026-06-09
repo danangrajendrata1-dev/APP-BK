@@ -67,7 +67,7 @@ export default async function StudentsPage({ searchParams }: StudentsPageProps) 
     <section className="space-y-6">
       <PageHeader
         title="Data Siswa"
-        description="Kelola data induk siswa sesuai PRD, mulai dari pencarian, penambahan, pembaruan, hingga melihat detail siswa."
+        description="Kelola data siswa, cari data dengan mudah, dan lihat detailnya."
       />
       {loadError ? (
         <ErrorState description={loadError} />
