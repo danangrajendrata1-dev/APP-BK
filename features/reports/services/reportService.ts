@@ -1,6 +1,7 @@
 import { ASSESSMENT_TYPE_OPTIONS } from "@/lib/constants/options";
 import { SCHOOL_ATTENDANCE_STATUS_OPTIONS } from "@/lib/constants/options";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { buildSupabaseErrorMessage, logSupabaseError } from "@/lib/supabase/error";
 
 import type {
   ChartItem,
@@ -359,6 +360,42 @@ export async function getReportsData(filters: ReportsFilters): Promise<ReportsDa
     ),
   ]);
 
+  if (attendanceResult.error) logSupabaseError("[Reports] school_attendance list", attendanceResult.error, { filters, dateRange });
+  if (counselingResult.error) logSupabaseError("[Reports] counseling_records list", counselingResult.error, { filters, dateRange });
+  if (studentAssistanceResult.error) logSupabaseError("[Reports] student_assistances list", studentAssistanceResult.error, { filters });
+  if (classAssistanceResult.error) logSupabaseError("[Reports] class_assistances list", classAssistanceResult.error, { filters });
+  if (documentsResult.error) logSupabaseError("[Reports] documents list", documentsResult.error, { filters, dateRange });
+  if (homeVisitsResult.error) logSupabaseError("[Reports] home_visits list", homeVisitsResult.error, { filters, dateRange });
+  if (studentsResult.error) logSupabaseError("[Reports] v_student_count_by_class", studentsResult.error, { filters });
+  if (bkServiceAttendanceResult.error) logSupabaseError("[Reports] bk_service_attendance", bkServiceAttendanceResult.error, { filters, dateRange });
+  if (assessmentFilesResult.error) logSupabaseError("[Reports] assessment_files", assessmentFilesResult.error, { filters });
+  if (counselingStatsResult.error) logSupabaseError("[Reports] counseling_records stats", counselingStatsResult.error, { filters, dateRange });
+  if (studentAssistanceStatsResult.error) logSupabaseError("[Reports] student_assistances stats", studentAssistanceStatsResult.error, { filters });
+  if (classAssistanceStatsResult.error) logSupabaseError("[Reports] class_assistances stats", classAssistanceStatsResult.error, { filters });
+  if (attendanceCountResult.error) logSupabaseError("[Reports] school_attendance count", attendanceCountResult.error, { filters, dateRange });
+  if (counselingCountResult.error) logSupabaseError("[Reports] counseling_records count", counselingCountResult.error, { filters, dateRange });
+  if (studentAssistanceCountResult.error) logSupabaseError("[Reports] student_assistances count", studentAssistanceCountResult.error, { filters });
+  if (classAssistanceCountResult.error) logSupabaseError("[Reports] class_assistances count", classAssistanceCountResult.error, { filters });
+  if (parentCallCountResult.error) logSupabaseError("[Reports] documents parent-call count", parentCallCountResult.error, { filters, dateRange });
+  if (homeVisitsCountResult.error) logSupabaseError("[Reports] home_visits count", homeVisitsCountResult.error, { filters, dateRange });
+  attendanceStatusCountResults.forEach((result, index) => {
+    if (result.error) {
+      logSupabaseError("[Reports] school_attendance status count", result.error, {
+        status: SCHOOL_ATTENDANCE_STATUS_OPTIONS[index]?.value ?? null,
+        filters,
+        dateRange,
+      });
+    }
+  });
+  counselingPerMonthCountResults.forEach((result, index) => {
+    if (result.error) {
+      logSupabaseError("[Reports] counseling_records month count", result.error, {
+        period: counselingMonthPeriods[index],
+        filters,
+      });
+    }
+  });
+
   if (
     attendanceResult.error ||
     counselingResult.error ||
@@ -381,7 +418,32 @@ export async function getReportsData(filters: ReportsFilters): Promise<ReportsDa
     attendanceStatusCountResults.some((result) => result.error) ||
     counselingPerMonthCountResults.some((result) => result.error)
   ) {
-    throw new Error("Gagal memuat laporan dan statistik.");
+    const firstError =
+      attendanceResult.error ??
+      counselingResult.error ??
+      studentAssistanceResult.error ??
+      classAssistanceResult.error ??
+      documentsResult.error ??
+      homeVisitsResult.error ??
+      studentsResult.error ??
+      bkServiceAttendanceResult.error ??
+      assessmentFilesResult.error ??
+      counselingStatsResult.error ??
+      studentAssistanceStatsResult.error ??
+      classAssistanceStatsResult.error ??
+      attendanceCountResult.error ??
+      counselingCountResult.error ??
+      studentAssistanceCountResult.error ??
+      classAssistanceCountResult.error ??
+      parentCallCountResult.error ??
+      homeVisitsCountResult.error ??
+      attendanceStatusCountResults.find((result) => result.error)?.error ??
+      counselingPerMonthCountResults.find((result) => result.error)?.error ??
+      null;
+
+    throw new Error(
+      buildSupabaseErrorMessage("Gagal memuat laporan dan statistik", firstError),
+    );
   }
 
   const attendanceRows = (attendanceResult.data ?? [])

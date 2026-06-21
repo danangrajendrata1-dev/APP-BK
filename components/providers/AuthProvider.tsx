@@ -13,6 +13,7 @@ import type { User } from "@supabase/supabase-js";
 
 import { normalizeRole, type AppRole } from "@/lib/auth/permissions";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { logSupabaseError } from "@/lib/supabase/error";
 
 const IDLE_TIMEOUT_MS = 60 * 60 * 1000;
 const LAST_ACTIVITY_STORAGE_KEY = "bk_last_activity_at";
@@ -98,17 +99,35 @@ async function buildAuthState(user: User | null): Promise<AuthContextValue> {
   }
 
   const supabase = createSupabaseBrowserClient();
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select("full_name, role")
     .eq("id", user.id)
     .maybeSingle();
 
   const profileData = profile as ProfileRow | null;
+  const resolvedRole = normalizeRole(
+    profileData?.role ?? user.app_metadata?.role ?? user.user_metadata?.role,
+  );
+
+  if (profileError) {
+    logSupabaseError("[AuthProvider] profile lookup", profileError, {
+      userId: user.id,
+    });
+  }
+
+  console.info("[AuthProvider] role result", {
+    userId: user.id,
+    profileRole: profileData?.role ?? null,
+    appMetadataRole: user.app_metadata?.role ?? null,
+    userMetadataRole: user.user_metadata?.role ?? null,
+    resolvedRole,
+    profileFound: Boolean(profileData),
+  });
 
   return {
     user,
-    role: normalizeRole(profileData?.role ?? user.user_metadata?.role),
+    role: resolvedRole,
     fullName:
       profileData?.full_name ??
       user.user_metadata?.full_name ??
@@ -194,7 +213,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const {
         data: { user },
+        error: authError,
       } = await supabase.auth.getUser();
+
+      if (authError) {
+        logSupabaseError("[AuthProvider] auth.getUser", authError);
+      }
 
       if (!isMounted) {
         return;

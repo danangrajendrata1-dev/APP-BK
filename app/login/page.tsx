@@ -8,6 +8,7 @@ import {
   normalizeRole,
 } from "@/lib/auth/permissions";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { logSupabaseError } from "@/lib/supabase/error";
 
 const LAST_ACTIVITY_STORAGE_KEY = "bk_last_activity_at";
 const LAST_ACTIVITY_COOKIE_NAME = "bk_last_activity_at";
@@ -36,16 +37,40 @@ export default function LoginPage() {
 
       const {
         data: { user },
+        error: authError,
       } = await supabase.auth.getUser();
 
-      const { data: profile } = await supabase
+      if (authError) {
+        logSupabaseError("[Login] auth.getUser", authError);
+      }
+
+      if (!user) {
+        throw new Error("Session login tidak ditemukan setelah login berhasil.");
+      }
+
+      const { data: profile, error: profileError } = await supabase
         .from("profiles")
         .select("role")
-        .eq("id", user?.id ?? "")
+        .eq("id", user.id)
         .maybeSingle();
 
       const profileRole = (profile as { role?: string } | null)?.role;
-      const role = normalizeRole(profileRole ?? user?.user_metadata?.role);
+      const role = normalizeRole(
+        profileRole ?? user.app_metadata?.role ?? user.user_metadata?.role,
+      );
+      if (profileError) {
+        logSupabaseError("[Login] profile lookup", profileError, {
+          userId: user.id,
+        });
+      }
+      console.info("[Login] role result", {
+        userId: user.id,
+        profileRole: profileRole ?? null,
+        appMetadataRole: user.app_metadata?.role ?? null,
+        userMetadataRole: user.user_metadata?.role ?? null,
+        resolvedRole: role,
+        profileFound: Boolean(profile),
+      });
       const destination = getDefaultRouteForRole(role);
 
       if (typeof window !== "undefined") {

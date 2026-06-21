@@ -11,6 +11,7 @@ import { createConfession, getConfessions } from "@/features/confession-box/serv
 import type { ConfessionFilters, ConfessionFormState } from "@/features/confession-box/types/confession";
 import { normalizeRole, type AppRole } from "@/lib/auth/permissions";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { logSupabaseError } from "@/lib/supabase/error";
 import type { ConfessionCategory } from "@/types/common";
 
 type PageProps = {
@@ -37,19 +38,44 @@ async function getCurrentRole(): Promise<AppRole> {
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
+    error: authError,
   } = await supabase.auth.getUser();
+
+  if (authError) {
+    logSupabaseError("[ConfessionBox] auth.getUser", authError);
+  }
 
   if (!user) {
     return "siswa";
   }
 
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select("role")
     .eq("id", user.id)
     .maybeSingle();
 
-  return normalizeRole((profile as { role?: string } | null)?.role ?? user.user_metadata?.role);
+  if (profileError) {
+    logSupabaseError("[ConfessionBox] profile lookup", profileError, {
+      userId: user.id,
+    });
+  }
+
+  const profileRole = (profile as { role?: string } | null)?.role;
+  const resolvedRole = normalizeRole(
+    profileRole ?? user.app_metadata?.role ?? user.user_metadata?.role,
+  );
+
+  console.info("[ConfessionBox] role result", {
+    userId: user.id,
+    profileRole: profileRole ?? null,
+    appMetadataRole: user.app_metadata?.role ?? null,
+    userMetadataRole: user.user_metadata?.role ?? null,
+    resolvedRole,
+    profileFound: Boolean(profile),
+  });
+
+  return resolvedRole;
 }
 
 export default async function ConfessionBoxPage({ searchParams }: PageProps) {

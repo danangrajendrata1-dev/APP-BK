@@ -1,4 +1,5 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { buildSupabaseErrorMessage, logSupabaseError } from "@/lib/supabase/error";
 import type { BkServiceAttendanceFormValues } from "@/types/common";
 import type { Database } from "@/types/database";
 
@@ -124,7 +125,14 @@ export async function getBkServiceAttendances(
   const { data, count, error } = await query;
 
   if (error) {
-    throw new Error("Gagal memuat data presensi layanan BK.");
+    logSupabaseError("[BkServiceAttendance] getBkServiceAttendances", error, {
+      page,
+      pageSize,
+      filters,
+    });
+    throw new Error(
+      buildSupabaseErrorMessage("Gagal memuat data presensi layanan BK", error),
+    );
   }
 
   const totalItems = count ?? 0;
@@ -152,7 +160,13 @@ export async function createBkServiceAttendance(
     .single();
 
   if (error) {
-    throw new Error("Gagal menyimpan presensi layanan BK.");
+    logSupabaseError("[BkServiceAttendance] createBkServiceAttendance", error, {
+      studentId: values.studentId,
+      serviceDate: values.serviceDate,
+    });
+    throw new Error(
+      buildSupabaseErrorMessage("Gagal menyimpan presensi layanan BK", error),
+    );
   }
 
   return mapBkServiceAttendance(data);

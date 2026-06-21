@@ -1,4 +1,5 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { buildSupabaseErrorMessage, logSupabaseError } from "@/lib/supabase/error";
 import type { CounselingRecordFormValues } from "@/types/common";
 import type { Database } from "@/types/database";
 
@@ -111,7 +112,16 @@ export async function getCounselingRecords(
   }
 
   const { data, count, error } = await query;
-  if (error) throw new Error("Gagal memuat catatan konseling.");
+  if (error) {
+    logSupabaseError("[CounselingRecords] getCounselingRecords", error, {
+      page,
+      pageSize,
+      filters,
+    });
+    throw new Error(
+      buildSupabaseErrorMessage("Gagal memuat catatan konseling", error),
+    );
+  }
 
   const totalItems = count ?? 0;
   return {
@@ -136,6 +146,14 @@ export async function createCounselingRecord(
     .select("*")
     .single();
 
-  if (error) throw new Error("Gagal menyimpan catatan konseling.");
+  if (error) {
+    logSupabaseError("[CounselingRecords] createCounselingRecord", error, {
+      studentId: values.studentId,
+      counselingDate: values.counselingDate,
+    });
+    throw new Error(
+      buildSupabaseErrorMessage("Gagal menyimpan catatan konseling", error),
+    );
+  }
   return mapCounselingRecord(data);
 }

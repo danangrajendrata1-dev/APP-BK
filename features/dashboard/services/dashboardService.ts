@@ -1,4 +1,5 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { buildSupabaseErrorMessage, logSupabaseError } from "@/lib/supabase/error";
 
 import type { DashboardSeriesItem, DashboardSummary } from "@/features/dashboard/types/dashboard";
 
@@ -100,6 +101,37 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
     supabase.from("confession_box").select("id", { count: "exact", head: true }),
   ]);
 
+  if (studentsResult.error) {
+    logSupabaseError("[Dashboard] students count", studentsResult.error);
+  }
+  if (studentsPerClassResult.error) {
+    logSupabaseError("[Dashboard] v_student_count_by_class", studentsPerClassResult.error);
+  }
+  counselingCountResults.forEach((result, index) => {
+    if (result.error) {
+      logSupabaseError("[Dashboard] counseling_records count", result.error, {
+        period: monthPeriods[index],
+      });
+    }
+  });
+  if (assistanceResult.error) {
+    logSupabaseError("[Dashboard] student_assistances", assistanceResult.error, {
+      assistanceStartYear,
+      assistanceStartMonth,
+      assistanceEndYear,
+      assistanceEndMonth,
+    });
+  }
+  if (documentsResult.error) {
+    logSupabaseError("[Dashboard] documents count", documentsResult.error);
+  }
+  if (homeVisitsResult.error) {
+    logSupabaseError("[Dashboard] home_visits count", homeVisitsResult.error);
+  }
+  if (confessionsResult.error) {
+    logSupabaseError("[Dashboard] confession_box count", confessionsResult.error);
+  }
+
   if (
     studentsResult.error ||
     studentsPerClassResult.error ||
@@ -109,7 +141,19 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
     homeVisitsResult.error ||
     confessionsResult.error
   ) {
-    throw new Error("Gagal memuat ringkasan dashboard.");
+    const firstError =
+      studentsResult.error ??
+      studentsPerClassResult.error ??
+      counselingCountResults.find((result) => result.error)?.error ??
+      assistanceResult.error ??
+      documentsResult.error ??
+      homeVisitsResult.error ??
+      confessionsResult.error ??
+      null;
+
+    throw new Error(
+      buildSupabaseErrorMessage("Gagal memuat ringkasan dashboard", firstError),
+    );
   }
 
   const studentsPerClassRows = (studentsPerClassResult.data ?? []) as Array<{

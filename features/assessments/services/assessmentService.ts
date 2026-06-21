@@ -4,6 +4,7 @@ import {
   uploadPrivateFile,
   validateUploadedFile,
 } from "@/lib/supabase/storage";
+import { buildSupabaseErrorMessage, logSupabaseError } from "@/lib/supabase/error";
 import type { Database } from "@/types/database";
 
 import type {
@@ -89,7 +90,16 @@ export async function getAssessments(
   }
 
   const { data, count, error } = await query;
-  if (error) throw new Error("Gagal memuat file inventori dan asesmen.");
+  if (error) {
+    logSupabaseError("[Assessments] getAssessments", error, {
+      page,
+      pageSize,
+      filters,
+    });
+    throw new Error(
+      buildSupabaseErrorMessage("Gagal memuat file inventori dan asesmen", error),
+    );
+  }
 
   const items = await Promise.all((data ?? []).map(mapAssessment));
   const totalItems = count ?? 0;
@@ -128,6 +138,12 @@ export async function createAssessment(
     .select("*")
     .single();
 
-  if (error) throw new Error("Gagal menyimpan file asesmen.");
+  if (error) {
+    logSupabaseError("[Assessments] createAssessment", error, {
+      title: values.assessmentType,
+      filePath,
+    });
+    throw new Error(buildSupabaseErrorMessage("Gagal menyimpan file asesmen", error));
+  }
   return mapAssessment(data);
 }

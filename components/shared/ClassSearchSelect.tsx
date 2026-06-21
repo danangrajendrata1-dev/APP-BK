@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { logSupabaseError } from "@/lib/supabase/error";
 
 import { useDebouncedValue } from "@/components/shared/useDebouncedValue";
 
@@ -76,6 +77,9 @@ export function ClassSearchSelect({
       }
 
       if (queryError) {
+        logSupabaseError("[ClassSearchSelect] searchClasses", queryError, {
+          keyword,
+        });
         setResults([]);
         setErrorMessage("Pencarian kelas gagal.");
         setIsLoading(false);

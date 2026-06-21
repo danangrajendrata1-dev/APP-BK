@@ -96,7 +96,9 @@ export async function proxy(request: NextRequest) {
   }
 
   if (isPublicRoute(pathname)) {
-    const role = normalizeRole(session.user.user_metadata?.role);
+    const role = normalizeRole(
+      session.user.app_metadata?.role ?? session.user.user_metadata?.role,
+    );
     const defaultRoute = getDefaultRouteForRole(role);
     const destinationUrl = request.nextUrl.clone();
     destinationUrl.pathname = defaultRoute;

@@ -4,6 +4,7 @@ import {
   uploadPrivateFile,
   validateUploadedFile,
 } from "@/lib/supabase/storage";
+import { buildSupabaseErrorMessage, logSupabaseError } from "@/lib/supabase/error";
 import type { DocumentFormValues } from "@/types/common";
 import type { Database } from "@/types/database";
 
@@ -106,7 +107,14 @@ export async function getDocuments(
   if (filters.className) query = query.ilike("class_name", `%${filters.className}%`);
 
   const { data, count, error } = await query;
-  if (error) throw new Error("Gagal memuat surat dan dokumen.");
+  if (error) {
+    logSupabaseError("[Documents] getDocuments", error, {
+      page,
+      pageSize,
+      filters,
+    });
+    throw new Error(buildSupabaseErrorMessage("Gagal memuat surat dan dokumen", error));
+  }
 
   const items = await Promise.all((data ?? []).map(mapDocument));
   const totalItems = count ?? 0;
@@ -147,7 +155,12 @@ export async function createDocument(
     .single();
 
   if (error) {
-    throw new Error("Gagal menyimpan surat dan dokumen.");
+    logSupabaseError("[Documents] createDocument", error, {
+      studentId: values.studentId,
+      documentDate: values.documentDate,
+      filePath,
+    });
+    throw new Error(buildSupabaseErrorMessage("Gagal menyimpan surat dan dokumen", error));
   }
 
   return mapDocument(data);

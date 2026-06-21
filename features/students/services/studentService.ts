@@ -1,4 +1,5 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { buildSupabaseErrorMessage, logSupabaseError } from "@/lib/supabase/error";
 import type { Database } from "@/types/database";
 import type { StudentFormValues } from "@/types/common";
 
@@ -143,7 +144,12 @@ export async function getStudents(
   const { data, count, error } = await query;
 
   if (error) {
-    throw new Error("Gagal memuat data siswa.");
+    logSupabaseError("[Students] getStudents", error, {
+      page,
+      pageSize,
+      filters,
+    });
+    throw new Error(buildSupabaseErrorMessage("Gagal memuat data siswa", error));
   }
 
   const totalItems = count ?? 0;
@@ -169,7 +175,8 @@ export async function getStudentById(id: string): Promise<Student | null> {
     .maybeSingle();
 
   if (error) {
-    throw new Error("Gagal memuat detail siswa.");
+    logSupabaseError("[Students] getStudentById", error, { id });
+    throw new Error(buildSupabaseErrorMessage("Gagal memuat detail siswa", error));
   }
 
   return data ? mapStudentDetail(data) : null;
@@ -185,11 +192,12 @@ export async function createStudent(values: StudentFormValues): Promise<Student>
     .single();
 
   if (error) {
+    logSupabaseError("[Students] createStudent", error, { payload });
     if (error.code === "23505") {
       throw new Error("NISN sudah terdaftar. Gunakan NISN yang berbeda.");
     }
 
-    throw new Error("Gagal menambahkan data siswa.");
+    throw new Error(buildSupabaseErrorMessage("Gagal menambahkan data siswa", error));
   }
 
   return mapStudent(data);
@@ -209,11 +217,12 @@ export async function updateStudent(
     .single();
 
   if (error) {
+    logSupabaseError("[Students] updateStudent", error, { id, payload });
     if (error.code === "23505") {
       throw new Error("NISN sudah terdaftar. Gunakan NISN yang berbeda.");
     }
 
-    throw new Error("Gagal memperbarui data siswa.");
+    throw new Error(buildSupabaseErrorMessage("Gagal memperbarui data siswa", error));
   }
 
   return mapStudent(data);
@@ -224,6 +233,7 @@ export async function deleteStudent(id: string): Promise<void> {
   const { error } = await supabase.from("students").delete().eq("id", id);
 
   if (error) {
-    throw new Error("Gagal menghapus data siswa.");
+    logSupabaseError("[Students] deleteStudent", error, { id });
+    throw new Error(buildSupabaseErrorMessage("Gagal menghapus data siswa", error));
   }
 }

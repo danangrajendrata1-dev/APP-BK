@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { logSupabaseError } from "@/lib/supabase/error";
 
 import { useDebouncedValue } from "@/components/shared/useDebouncedValue";
 
@@ -97,6 +98,10 @@ export function StudentSearchSelect({
       }
 
       if (queryError) {
+        logSupabaseError("[StudentSearchSelect] searchStudents", queryError, {
+          keyword,
+          selectedClass: selectedClass ?? null,
+        });
         setResults([]);
         setErrorMessage("Pencarian siswa gagal.");
         setIsLoading(false);

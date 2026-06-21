@@ -1,4 +1,5 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { buildSupabaseErrorMessage, logSupabaseError } from "@/lib/supabase/error";
 import type { SchoolAttendanceFormValues } from "@/types/common";
 import type { Database } from "@/types/database";
 
@@ -85,7 +86,10 @@ export async function getStudentReferences(): Promise<StudentReference[]> {
     .order("full_name", { ascending: true });
 
   if (error) {
-    throw new Error("Gagal memuat referensi siswa.");
+    logSupabaseError("[SchoolAttendance] getStudentReferences", error);
+    throw new Error(
+      buildSupabaseErrorMessage("Gagal memuat referensi siswa", error),
+    );
   }
 
   return (data ?? []).map(mapStudentReference);
@@ -132,7 +136,14 @@ export async function getSchoolAttendances(
   const { data, count, error } = await query;
 
   if (error) {
-    throw new Error("Gagal memuat data presensi sekolah.");
+    logSupabaseError("[SchoolAttendance] getSchoolAttendances", error, {
+      page,
+      pageSize,
+      filters,
+    });
+    throw new Error(
+      buildSupabaseErrorMessage("Gagal memuat data presensi sekolah", error),
+    );
   }
 
   const totalItems = count ?? 0;
@@ -161,7 +172,13 @@ export async function createSchoolAttendance(
     .single();
 
   if (error) {
-    throw new Error("Gagal menyimpan presensi sekolah.");
+    logSupabaseError("[SchoolAttendance] createSchoolAttendance", error, {
+      studentId: values.studentId,
+      attendanceDate: values.attendanceDate,
+    });
+    throw new Error(
+      buildSupabaseErrorMessage("Gagal menyimpan presensi sekolah", error),
+    );
   }
 
   return mapSchoolAttendance(data);

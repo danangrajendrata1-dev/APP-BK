@@ -4,6 +4,7 @@ import {
   uploadPrivateFile,
   validateUploadedFile,
 } from "@/lib/supabase/storage";
+import { buildSupabaseErrorMessage, logSupabaseError } from "@/lib/supabase/error";
 import type { Database } from "@/types/database";
 import type { HomeVisitFormValues } from "@/types/common";
 
@@ -119,7 +120,14 @@ export async function getHomeVisits(
   if (filters.studentName) query = query.ilike("student_name", `%${filters.studentName}%`);
 
   const { data, count, error } = await query;
-  if (error) throw new Error("Gagal memuat data home visit.");
+  if (error) {
+    logSupabaseError("[HomeVisits] getHomeVisits", error, {
+      page,
+      pageSize,
+      filters,
+    });
+    throw new Error(buildSupabaseErrorMessage("Gagal memuat data home visit", error));
+  }
 
   const items = await Promise.all((data ?? []).map(mapHomeVisit));
   const totalItems = count ?? 0;
@@ -159,6 +167,13 @@ export async function createHomeVisit(
     .select("*")
     .single();
 
-  if (error) throw new Error("Gagal menyimpan data home visit.");
+  if (error) {
+    logSupabaseError("[HomeVisits] createHomeVisit", error, {
+      studentId: values.studentId,
+      visitDate: values.visitDate,
+      documentationPath,
+    });
+    throw new Error(buildSupabaseErrorMessage("Gagal menyimpan data home visit", error));
+  }
   return mapHomeVisit(data);
 }

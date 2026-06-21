@@ -1,4 +1,5 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { buildSupabaseErrorMessage, logSupabaseError } from "@/lib/supabase/error";
 import type { Database } from "@/types/database";
 import type { ClassAssistanceFormValues } from "@/types/common";
 import type { ClassAssistanceItem, ClassAssistanceListQuery, ClassAssistanceListResult } from "@/features/class-assistances/types/classAssistance";
@@ -74,7 +75,19 @@ export async function getClassAssistances(
   if (filters.finalWarningLetter) query = query.ilike("final_warning_letter", `%${filters.finalWarningLetter}%`);
 
   const { data, count, error } = await query;
-  if (error) throw new Error("Gagal memuat daftar pendampingan siswa per kelas.");
+  if (error) {
+    logSupabaseError("[ClassAssistances] getClassAssistances", error, {
+      page,
+      pageSize,
+      filters,
+    });
+    throw new Error(
+      buildSupabaseErrorMessage(
+        "Gagal memuat daftar pendampingan siswa per kelas",
+        error,
+      ),
+    );
+  }
 
   const totalItems = count ?? 0;
   return {
@@ -98,6 +111,17 @@ export async function createClassAssistance(
     .insert(mapClassAssistancePayload(values))
     .select("*")
     .single();
-  if (error) throw new Error("Gagal menyimpan daftar pendampingan siswa per kelas.");
+  if (error) {
+    logSupabaseError("[ClassAssistances] createClassAssistance", error, {
+      studentId: values.studentId,
+      className: values.className,
+    });
+    throw new Error(
+      buildSupabaseErrorMessage(
+        "Gagal menyimpan daftar pendampingan siswa per kelas",
+        error,
+      ),
+    );
+  }
   return mapClassAssistance(data);
 }

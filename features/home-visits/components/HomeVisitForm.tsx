@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { logSupabaseError } from "@/lib/supabase/error";
 import { INITIAL_HOME_VISIT_FORM_STATE } from "@/features/home-visits/schemas/homeVisitSchema";
 import type { HomeVisitFormState } from "@/features/home-visits/types/homeVisit";
 
@@ -88,6 +89,12 @@ function HomeVisitFormFields({
         .select("id, full_name, nisn, class_name, parent_name, address")
         .eq("id", studentId)
         .maybeSingle();
+
+      if (error) {
+        logSupabaseError("[HomeVisitForm] loadStudentDetails", error, {
+          studentId,
+        });
+      }
 
       if (isCancelled || error || !data) {
         return;

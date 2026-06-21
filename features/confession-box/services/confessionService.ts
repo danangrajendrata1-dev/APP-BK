@@ -1,4 +1,5 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { buildSupabaseErrorMessage, logSupabaseError } from "@/lib/supabase/error";
 import type { ConfessionFormValues } from "@/types/common";
 import type { Database } from "@/types/database";
 
@@ -80,7 +81,16 @@ export async function getConfessions(
   if (filters.category) query = query.eq("category", filters.category);
 
   const { data, count, error } = await query;
-  if (error) throw new Error("Gagal memuat data kotak curhat digital.");
+  if (error) {
+    logSupabaseError("[Confessions] getConfessions", error, {
+      page,
+      pageSize,
+      filters,
+    });
+    throw new Error(
+      buildSupabaseErrorMessage("Gagal memuat data kotak curhat digital", error),
+    );
+  }
 
   const totalItems = count ?? 0;
   return {
@@ -113,6 +123,12 @@ export async function createConfession(
     .select("*")
     .single();
 
-  if (error) throw new Error("Gagal menyimpan curhat digital.");
+  if (error) {
+    logSupabaseError("[Confessions] createConfession", error, {
+      userId: user.id,
+      confessionDate: values.confessionDate,
+    });
+    throw new Error(buildSupabaseErrorMessage("Gagal menyimpan curhat digital", error));
+  }
   return mapConfession(data);
 }

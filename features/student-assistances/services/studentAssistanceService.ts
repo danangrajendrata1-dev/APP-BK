@@ -1,4 +1,5 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { buildSupabaseErrorMessage, logSupabaseError } from "@/lib/supabase/error";
 import type { Database } from "@/types/database";
 import type { StudentAssistanceFormValues } from "@/features/student-assistances/types/studentAssistance";
 import type { StudentAssistanceItem, StudentAssistanceListQuery, StudentAssistanceListResult } from "@/features/student-assistances/types/studentAssistance";
@@ -122,7 +123,19 @@ export async function getStudentAssistances(
   if (filters.year) query = query.eq("assistance_year", filters.year);
 
   const { data, count, error } = await query;
-  if (error) throw new Error("Gagal memuat catatan pendampingan siswa per bulan.");
+  if (error) {
+    logSupabaseError("[StudentAssistances] getStudentAssistances", error, {
+      page,
+      pageSize,
+      filters,
+    });
+    throw new Error(
+      buildSupabaseErrorMessage(
+        "Gagal memuat catatan pendampingan siswa per bulan",
+        error,
+      ),
+    );
+  }
 
   const totalItems = count ?? 0;
   return {
@@ -146,6 +159,18 @@ export async function createStudentAssistance(
     .insert(mapAssistancePayload(values))
     .select("*")
     .single();
-  if (error) throw new Error("Gagal menyimpan catatan pendampingan siswa per bulan.");
+  if (error) {
+    logSupabaseError("[StudentAssistances] createStudentAssistance", error, {
+      studentId: values.studentId,
+      month: values.month,
+      year: values.year,
+    });
+    throw new Error(
+      buildSupabaseErrorMessage(
+        "Gagal menyimpan catatan pendampingan siswa per bulan",
+        error,
+      ),
+    );
+  }
   return mapAssistanceRow(data);
 }
