@@ -1,68 +1,91 @@
-import { Button } from "@/components/ui/Button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card";
-import { EmptyState } from "@/components/shared/EmptyState";
-import { Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } from "@/components/ui/Table";
-import type { CounselingRecordListResult } from "@/features/counseling-records/types/counselingRecord";
+import type { CounselingRecordSheetResult } from "@/features/counseling-records/types/counselingRecord";
 
-type Props = { result: CounselingRecordListResult; queryString: string };
-function createPageHref(queryString: string, page: number) {
-  const params = new URLSearchParams(queryString);
-  params.set("page", String(page));
-  return `/counseling-records?${params.toString()}`;
+type Props = {
+  result: CounselingRecordSheetResult;
+};
+
+const DAYS_IN_MONTH = 31;
+const PLACEHOLDER_ROWS = 8;
+
+function formatCount(value: number) {
+  return value > 0 ? String(value) : "";
 }
 
-export function CounselingRecordTable({ result, queryString }: Props) {
-  const { items, pagination } = result;
-  if (!items.length) {
-    return <EmptyState title="Belum ada catatan konseling" description="Tambahkan data konseling terlebih dahulu atau ubah filter yang digunakan." />;
-  }
+export function CounselingRecordTable({ result }: Props) {
+  const { items } = result;
+  const visibleRowCount = Math.max(items.length, PLACEHOLDER_ROWS);
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Daftar Catatan Konseling</CardTitle>
-        <CardDescription>Menampilkan {items.length} dari {pagination.totalItems} catatan konseling.</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-5">
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableHeaderCell>Tanggal</TableHeaderCell>
-              <TableHeaderCell>Nama Siswa</TableHeaderCell>
-              <TableHeaderCell>Kelas</TableHeaderCell>
-              <TableHeaderCell>Pertemuan</TableHeaderCell>
-              <TableHeaderCell>Media</TableHeaderCell>
-              <TableHeaderCell>Jenis</TableHeaderCell>
-              <TableHeaderCell>Topik</TableHeaderCell>
-              <TableHeaderCell>Hasil Konseling</TableHeaderCell>
-              <TableHeaderCell>Tindak Lanjut</TableHeaderCell>
-              <TableHeaderCell>Keterangan</TableHeaderCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {items.map((item) => (
-              <TableRow key={item.id}>
-                <TableCell>{item.counselingDate}</TableCell>
-                <TableCell className="font-medium text-slate-900">{item.studentName}</TableCell>
-                <TableCell>{item.className}</TableCell>
-                <TableCell>{item.meetingNumber ?? "-"}</TableCell>
-                <TableCell>{item.media}</TableCell>
-                <TableCell>{item.counselingType}</TableCell>
-                <TableCell>{item.topic}</TableCell>
-                <TableCell>{item.counselingResult}</TableCell>
-                <TableCell>{item.followUp}</TableCell>
-                <TableCell>{item.description || "-"}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-        <div className="flex flex-col gap-3 border-t border-slate-200 pt-5 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between">
-          <p>Halaman {pagination.page} dari {pagination.totalPages}</p>
-          <div className="flex gap-3">
-            <Button href={createPageHref(queryString, pagination.page - 1)} variant="outline" disabled={pagination.page <= 1}>Sebelumnya</Button>
-            <Button href={createPageHref(queryString, pagination.page + 1)} variant="outline" disabled={pagination.page >= pagination.totalPages}>Berikutnya</Button>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+    <section className="border border-slate-500 bg-white">
+      <div className="overflow-x-auto">
+        <table className="min-w-[1700px] border-collapse text-sm">
+          <thead>
+            <tr>
+              <th rowSpan={2} className="border border-slate-500 bg-slate-50 px-2 py-2 text-center text-xs font-bold uppercase text-slate-900">
+                NO.
+              </th>
+              <th rowSpan={2} className="border border-slate-500 bg-slate-50 px-3 py-2 text-center text-xs font-bold uppercase text-slate-900">
+                NAMA LENGKAP
+              </th>
+              <th rowSpan={2} className="border border-slate-500 bg-slate-50 px-3 py-2 text-center text-xs font-bold uppercase text-slate-900">
+                KELAS
+              </th>
+              <th rowSpan={2} className="border border-slate-500 bg-slate-50 px-3 py-2 text-center text-xs font-bold uppercase text-slate-900">
+                JUMLAH SEBELUMNYA
+              </th>
+              <th colSpan={DAYS_IN_MONTH} className="border border-slate-500 bg-slate-50 px-3 py-2 text-center text-xs font-bold uppercase text-slate-900">
+                BULAN
+              </th>
+              <th rowSpan={2} className="border border-slate-500 bg-slate-50 px-3 py-2 text-center text-xs font-bold uppercase text-slate-900">
+                JUMLAH
+              </th>
+              <th rowSpan={2} className="border border-slate-500 bg-slate-50 px-3 py-2 text-center text-xs font-bold uppercase text-slate-900">
+                KETERANGAN
+              </th>
+            </tr>
+            <tr>
+              {Array.from({ length: DAYS_IN_MONTH }, (_, index) => (
+                <th key={index + 1} className="border border-slate-500 bg-white px-1 py-1 text-center text-xs font-bold text-slate-900">
+                  {index + 1}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {Array.from({ length: visibleRowCount }, (_, index) => {
+              const item = items[index];
+
+              return (
+                <tr key={item?.id ?? `blank-${index}`} className="bg-white">
+                  <td className="h-8 border border-slate-500 px-2 py-1 text-center text-xs text-slate-900">
+                    {item ? index + 1 : ""}
+                  </td>
+                  <td className="h-8 border border-slate-500 px-3 py-1 text-xs uppercase tracking-wide text-slate-900">
+                    {item ? item.studentName.toUpperCase() : ""}
+                  </td>
+                  <td className="h-8 border border-slate-500 px-3 py-1 text-xs text-slate-900">
+                    {item?.className ?? ""}
+                  </td>
+                  <td className="h-8 border border-slate-500 px-3 py-1 text-center text-xs text-slate-900">
+                    {item ? formatCount(item.previousTotal) : ""}
+                  </td>
+                  {Array.from({ length: DAYS_IN_MONTH }, (_, dayIndex) => (
+                    <td key={dayIndex + 1} className="h-8 border border-slate-500 px-1 py-1 text-center text-xs text-slate-900">
+                      {item?.days[dayIndex] ?? ""}
+                    </td>
+                  ))}
+                  <td className="h-8 border border-slate-500 px-3 py-1 text-center text-xs text-slate-900">
+                    {item ? formatCount(item.total) : ""}
+                  </td>
+                  <td className="h-8 border border-slate-500 px-3 py-1 text-xs text-slate-900">
+                    {item ? item.description : ""}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </section>
   );
 }

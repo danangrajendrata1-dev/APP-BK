@@ -32,7 +32,7 @@ export const APP_NAV_ITEMS: AppNavItem[] = [
     label: "Daftar Hadir dan Catatan Kunjungan BK",
     href: "/bk-service-attendance",
   },
-  { label: "Catatan Konseling", href: "/counseling-records" },
+  { label: "Catatan Pelanggaran", href: "/counseling-records" },
   {
     label: "Catatan Pendampingan Siswa Per Bulan",
     href: "/student-assistances",

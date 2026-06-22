@@ -23,6 +23,17 @@ export type CounselingRecordItem = {
   updatedAt: string;
 };
 
+export type CounselingRecordSheetRow = {
+  id: string;
+  studentId: string;
+  studentName: string;
+  className: string;
+  previousTotal: number;
+  days: string[];
+  total: number;
+  description: string;
+};
+
 export type CounselingRecordFilters = {
   month?: number;
   year?: number;
@@ -38,6 +49,12 @@ export type CounselingRecordListResult = {
   items: CounselingRecordItem[];
   filters: CounselingRecordFilters;
   pagination: PaginationMeta;
+};
+
+export type CounselingRecordSheetResult = {
+  items: CounselingRecordSheetRow[];
+  month: number;
+  year: number;
 };
 
 export type CounselingRecordFormErrors = Partial<

@@ -1,75 +1,120 @@
 import Link from "next/link";
 
 import { Button } from "@/components/ui/Button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card";
 import { EmptyState } from "@/components/shared/EmptyState";
-import { Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } from "@/components/ui/Table";
 import type { DocumentListResult } from "@/features/documents/types/document";
 
-type Props = { result: DocumentListResult; queryString: string };
+type Props = { result: DocumentListResult };
 
-function createPageHref(queryString: string, page: number) {
-  const params = new URLSearchParams(queryString);
-  params.set("page", String(page));
-  return `/documents?${params.toString()}`;
+function createPageHref(page: number) {
+  return `/documents?page=${page}`;
 }
 
-export function DocumentTable({ result, queryString }: Props) {
+function getDocumentLabel(item: DocumentListResult["items"][number]) {
+  if (item.documentType && item.letterNumber) {
+    return `${item.documentType} - ${item.letterNumber}`;
+  }
+
+  if (item.documentType) {
+    return item.documentType;
+  }
+
+  if (item.letterNumber) {
+    return item.letterNumber;
+  }
+
+  return "Dokumen tanpa judul";
+}
+
+function renderEmptyRows(count: number) {
+  return Array.from({ length: count }, (_, index) => (
+    <tr key={`empty-row-${index}`} className="h-10">
+      <td className="border border-slate-300 px-2 py-2" />
+      <td className="border border-slate-300 px-2 py-2" />
+    </tr>
+  ));
+}
+
+export function DocumentTable({ result }: Props) {
   const { items, pagination } = result;
 
   if (!items.length) {
-    return <EmptyState title="Belum ada surat & dokumen" description="Tambahkan data dokumen terlebih dahulu atau ubah filter yang digunakan." />;
+    return (
+      <EmptyState
+        title="Belum ada surat & dokumen"
+        description="Gunakan tombol Import Surat / Dokumen untuk menambahkan dokumen pertama."
+      />
+    );
   }
 
+  const emptyRowCount = Math.max(0, 8 - items.length);
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Daftar Surat & Dokumen</CardTitle>
-        <CardDescription>Menampilkan {items.length} dari {pagination.totalItems} data surat & dokumen.</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-5">
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableHeaderCell>Nomor Surat</TableHeaderCell>
-              <TableHeaderCell>Tanggal</TableHeaderCell>
-              <TableHeaderCell>Nama Siswa</TableHeaderCell>
-              <TableHeaderCell>Kelas</TableHeaderCell>
-              <TableHeaderCell>Jenis Surat</TableHeaderCell>
-              <TableHeaderCell>File Lampiran</TableHeaderCell>
-              <TableHeaderCell>Keterangan</TableHeaderCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
+    <div className="space-y-4">
+      <div className="overflow-x-auto">
+        <table className="min-w-full border-collapse bg-white text-xs text-slate-800 sm:text-sm">
+          <thead>
+            <tr>
+              <th className="border border-slate-300 bg-slate-50 px-2 py-2 text-left font-semibold uppercase tracking-normal text-slate-900">
+                Surat dan Dokumen
+              </th>
+              <th className="border border-slate-300 bg-slate-50 px-2 py-2 text-left font-semibold uppercase tracking-normal text-slate-900">
+                Deskripsi / Preview Isi
+              </th>
+            </tr>
+          </thead>
+          <tbody>
             {items.map((item) => (
-              <TableRow key={item.id}>
-                <TableCell className="font-medium text-slate-900">{item.letterNumber}</TableCell>
-                <TableCell>{item.documentDate}</TableCell>
-                <TableCell>{item.studentName}</TableCell>
-                <TableCell>{item.className}</TableCell>
-                <TableCell>{item.documentType}</TableCell>
-                <TableCell>
-                  {item.fileUrl ? (
-                    <Link href={item.fileUrl} target="_blank" className="font-medium text-slate-900 underline underline-offset-4">
-                      Buka File
-                    </Link>
-                  ) : (
-                    "-"
-                  )}
-                </TableCell>
-                <TableCell>{item.description || "-"}</TableCell>
-              </TableRow>
+              <tr key={item.id} className="align-top">
+                <td className="border border-slate-300 px-2 py-2">
+                  <p className="font-medium text-slate-900">{getDocumentLabel(item)}</p>
+                </td>
+                <td className="border border-slate-300 px-2 py-2">
+                  <div className="space-y-2">
+                    <p className="whitespace-pre-wrap leading-5 text-slate-700">
+                      {item.description || "Preview belum tersedia"}
+                    </p>
+                    {item.fileUrl ? (
+                      <Link
+                        href={item.fileUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex text-xs font-medium text-slate-900 underline underline-offset-4"
+                      >
+                        Buka dokumen
+                      </Link>
+                    ) : (
+                      <p className="text-xs text-slate-500">Preview belum tersedia</p>
+                    )}
+                  </div>
+                </td>
+              </tr>
             ))}
-          </TableBody>
-        </Table>
-        <div className="flex flex-col gap-3 border-t border-slate-200 pt-5 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between">
-          <p>Halaman {pagination.page} dari {pagination.totalPages}</p>
-          <div className="flex gap-3">
-            <Button href={createPageHref(queryString, pagination.page - 1)} variant="outline" disabled={pagination.page <= 1}>Sebelumnya</Button>
-            <Button href={createPageHref(queryString, pagination.page + 1)} variant="outline" disabled={pagination.page >= pagination.totalPages}>Berikutnya</Button>
-          </div>
+            {renderEmptyRows(emptyRowCount)}
+          </tbody>
+        </table>
+      </div>
+      <div className="flex flex-col gap-3 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between">
+        <p>
+          Halaman {pagination.page} dari {pagination.totalPages}
+        </p>
+        <div className="flex gap-3">
+          <Button
+            href={createPageHref(pagination.page - 1)}
+            variant="outline"
+            disabled={pagination.page <= 1}
+          >
+            Sebelumnya
+          </Button>
+          <Button
+            href={createPageHref(pagination.page + 1)}
+            variant="outline"
+            disabled={pagination.page >= pagination.totalPages}
+          >
+            Berikutnya
+          </Button>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

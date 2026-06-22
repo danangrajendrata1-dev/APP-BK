@@ -2,14 +2,11 @@ import { revalidatePath } from "next/cache";
 
 import { ErrorState } from "@/components/shared/ErrorState";
 import { PageHeader } from "@/components/shared/PageHeader";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card";
-import { DocumentFilter } from "@/features/documents/components/DocumentFilter";
 import { DocumentForm } from "@/features/documents/components/DocumentForm";
 import { DocumentTable } from "@/features/documents/components/DocumentTable";
 import { createDocumentFormState, INITIAL_DOCUMENT_FORM_STATE, parseDocumentFormData, validateDocumentForm } from "@/features/documents/schemas/documentSchema";
 import { createDocument, getDocuments } from "@/features/documents/services/documentService";
-import type { DocumentFilters, DocumentFormState } from "@/features/documents/types/document";
-import type { DocumentType } from "@/types/common";
+import type { DocumentFormState } from "@/features/documents/types/document";
 
 type PageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -24,22 +21,8 @@ function parsePage(value: string | undefined) {
   return Number.isFinite(page) && page > 0 ? page : 1;
 }
 
-function parseFilters(searchParams: Record<string, string | string[] | undefined>): DocumentFilters {
-  const documentDate = getSingleValue(searchParams.documentDate)?.trim();
-  const studentName = getSingleValue(searchParams.studentName)?.trim();
-  const className = getSingleValue(searchParams.className)?.trim();
-  const documentType = getSingleValue(searchParams.documentType)?.trim() as DocumentType | undefined;
-  return {
-    documentDate: documentDate || undefined,
-    documentType: documentType || undefined,
-    studentName: studentName || undefined,
-    className: className || undefined,
-  };
-}
-
 export default async function DocumentsPage({ searchParams }: PageProps) {
   const resolvedSearchParams = await searchParams;
-  const filters = parseFilters(resolvedSearchParams);
   const page = parsePage(getSingleValue(resolvedSearchParams.page));
   let loadError = "";
   let result: Awaited<ReturnType<typeof getDocuments>> | null = null;
@@ -69,7 +52,7 @@ export default async function DocumentsPage({ searchParams }: PageProps) {
   }
 
   try {
-    result = await getDocuments({ page, pageSize: 20, filters });
+    result = await getDocuments({ page, pageSize: 20 });
   } catch (error) {
     loadError =
       error instanceof Error
@@ -77,32 +60,24 @@ export default async function DocumentsPage({ searchParams }: PageProps) {
         : "Data surat & dokumen gagal dimuat.";
   }
 
-  const queryString = new URLSearchParams({
-    ...(filters.documentDate ? { documentDate: filters.documentDate } : {}),
-    ...(filters.documentType ? { documentType: filters.documentType } : {}),
-    ...(filters.studentName ? { studentName: filters.studentName } : {}),
-    ...(filters.className ? { className: filters.className } : {}),
-  }).toString();
-
   return (
     <section className="space-y-6">
-      <PageHeader title="Surat & Dokumen" description="Kelola surat dan dokumen BK, lalu cari data berdasarkan tanggal, jenis surat, nama siswa, atau kelas." />
-      <Card>
-        <CardHeader>
-          <CardTitle>Input Surat & Dokumen</CardTitle>
-          <CardDescription>Unggah lampiran surat atau dokumen yang diperlukan.</CardDescription>
-        </CardHeader>
-        <CardContent>
+      <PageHeader
+        title="Surat & Dokumen"
+        description="Daftar surat dan dokumen BK yang sudah diunggah."
+      />
+      <details className="border border-slate-300 bg-white">
+        <summary className="cursor-pointer list-none px-3 py-2 text-sm font-medium text-slate-800">
+          Import Surat / Dokumen
+        </summary>
+        <div className="border-t border-slate-300 px-3 py-3">
           <DocumentForm action={createDocumentAction} />
-        </CardContent>
-      </Card>
+        </div>
+      </details>
       {loadError ? (
         <ErrorState description={loadError} />
       ) : (
-        <>
-          <DocumentFilter filters={filters} />
-          {result ? <DocumentTable result={result} queryString={queryString} /> : null}
-        </>
+        result ? <DocumentTable result={result} /> : null
       )}
     </section>
   );
