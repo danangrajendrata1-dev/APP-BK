@@ -1,6 +1,6 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { buildSupabaseErrorMessage, logSupabaseError } from "@/lib/supabase/error";
-import type { BkServiceAttendanceFormValues } from "@/types/common";
+import type { BkServiceAttendanceFormValues, BkServicePurpose } from "@/types/common";
 import type { Database } from "@/types/database";
 
 import type {
@@ -39,6 +39,22 @@ function normalizeText(value: string | null | undefined) {
   return value ?? "";
 }
 
+function normalizePurpose(value: string | null | undefined): BkServicePurpose {
+  const allowedPurposes: BkServicePurpose[] = [
+    "Konseling Individu",
+    "Konseling Kelompok",
+    "Layanan Klasikal",
+    "Informasi Karier",
+    "Informasi Sekolah Lanjutan",
+    "Pemanggilan",
+    "Lainnya",
+  ];
+
+  return allowedPurposes.includes(value as BkServicePurpose)
+    ? (value as BkServicePurpose)
+    : "Lainnya";
+}
+
 function mapBkServiceAttendance(
   row: BkServiceAttendanceListRow,
 ): BkServiceAttendanceItem {
@@ -50,7 +66,7 @@ function mapBkServiceAttendance(
     className: row.class_name,
     arrivalTime: normalizeText(row.arrival_time),
     finishTime: normalizeText(row.finish_time),
-    purpose: row.purpose,
+    purpose: normalizePurpose(row.purpose),
     serviceType: row.service_type,
     counselorName: normalizeText(row.counselor_name),
     description: normalizeText(row.description),
@@ -87,7 +103,7 @@ export async function getBkServiceAttendances(
   const to = from + pageSize - 1;
 
   let query = supabase
-    .from("bk_service_attendance")
+    .from("v_bk_service_attendance_with_relations" as never)
     .select(BK_SERVICE_ATTENDANCE_LIST_COLUMNS, { count: "exact" })
     .order("service_date", { ascending: false })
     .range(from, to);
@@ -138,7 +154,9 @@ export async function getBkServiceAttendances(
   const totalItems = count ?? 0;
 
   return {
-    items: (data ?? []).map(mapBkServiceAttendance),
+    items: ((data ?? []) as BkServiceAttendanceListRow[]).map(
+      mapBkServiceAttendance,
+    ),
     filters,
     pagination: {
       page,
@@ -155,7 +173,7 @@ export async function createBkServiceAttendance(
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("bk_service_attendance")
-    .insert(mapBkServiceAttendancePayload(values))
+    .insert(mapBkServiceAttendancePayload(values) as never)
     .select("*")
     .single();
 
@@ -169,5 +187,5 @@ export async function createBkServiceAttendance(
     );
   }
 
-  return mapBkServiceAttendance(data);
+  return mapBkServiceAttendance(data as BkServiceAttendanceListRow);
 }

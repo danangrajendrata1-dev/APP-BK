@@ -73,7 +73,7 @@ export async function getConfessions(
   const to = from + pageSize - 1;
 
   let query = supabase
-    .from("confession_box")
+    .from("v_digital_confessions_with_relations" as never)
     .select(CONFESSION_LIST_COLUMNS, { count: "exact" })
     .order("confession_date", { ascending: false })
     .range(from, to);
@@ -94,7 +94,7 @@ export async function getConfessions(
 
   const totalItems = count ?? 0;
   return {
-    items: (data ?? []).map(mapConfession),
+    items: ((data ?? []) as ConfessionListRow[]).map(mapConfession),
     filters,
     pagination: {
       page,
@@ -119,7 +119,7 @@ export async function createConfession(
 
   const { data, error } = await supabase
     .from("confession_box")
-    .insert(mapConfessionPayload(values, user.id))
+    .insert(mapConfessionPayload(values, user.id) as never)
     .select("*")
     .single();
 
@@ -130,5 +130,5 @@ export async function createConfession(
     });
     throw new Error(buildSupabaseErrorMessage("Gagal menyimpan curhat digital", error));
   }
-  return mapConfession(data);
+  return mapConfession(data as ConfessionListRow);
 }

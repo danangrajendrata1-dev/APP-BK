@@ -97,7 +97,7 @@ export async function getHomeVisits(
   const to = from + pageSize - 1;
 
   let query = supabase
-    .from("home_visits")
+    .from("v_home_visits_with_relations" as never)
     .select(HOME_VISIT_LIST_COLUMNS, { count: "exact" })
     .order("visit_date", { ascending: false })
     .range(from, to);
@@ -129,7 +129,9 @@ export async function getHomeVisits(
     throw new Error(buildSupabaseErrorMessage("Gagal memuat data home visit", error));
   }
 
-  const items = await Promise.all((data ?? []).map(mapHomeVisit));
+  const items = await Promise.all(
+    ((data ?? []) as HomeVisitListRow[]).map(mapHomeVisit),
+  );
   const totalItems = count ?? 0;
   return {
     items,
@@ -163,7 +165,7 @@ export async function createHomeVisit(
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("home_visits")
-    .insert(mapHomeVisitPayload(values, documentationPath, documentationUrl))
+    .insert(mapHomeVisitPayload(values, documentationPath, documentationUrl) as never)
     .select("*")
     .single();
 
@@ -175,5 +177,5 @@ export async function createHomeVisit(
     });
     throw new Error(buildSupabaseErrorMessage("Gagal menyimpan data home visit", error));
   }
-  return mapHomeVisit(data);
+  return mapHomeVisit(data as HomeVisitListRow);
 }

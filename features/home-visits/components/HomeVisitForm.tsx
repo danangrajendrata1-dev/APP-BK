@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { logSupabaseError } from "@/lib/supabase/error";
+import type { Database } from "@/types/database";
 import { INITIAL_HOME_VISIT_FORM_STATE } from "@/features/home-visits/schemas/homeVisitSchema";
 import type { HomeVisitFormState } from "@/features/home-visits/types/homeVisit";
 
@@ -26,6 +27,9 @@ type HomeVisitStudentDetails = StudentSearchOption & {
   address: string;
   parentName: string;
 };
+
+type HomeVisitStudentRow =
+  Database["public"]["Views"]["v_students_with_relations"]["Row"];
 
 type HomeVisitFormFieldsProps = {
   formAction: (
@@ -83,9 +87,9 @@ function HomeVisitFormFields({
 
     let isCancelled = false;
 
-    async function loadStudentDetails() {
-      const { data, error } = await supabase
-        .from("students")
+      async function loadStudentDetails() {
+        const { data, error } = await supabase
+        .from("v_students_with_relations")
         .select("id, full_name, nisn, class_name, parent_name, address")
         .eq("id", studentId)
         .maybeSingle();
@@ -100,13 +104,15 @@ function HomeVisitFormFields({
         return;
       }
 
+      const student = data as HomeVisitStudentRow;
+
       setStudentDetails({
-        id: data.id,
-        fullName: data.full_name,
-        nis: data.nisn,
-        className: data.class_name,
-        parentName: data.parent_name ?? "",
-        address: data.address ?? "",
+        id: student.id,
+        fullName: student.full_name,
+        nis: student.nisn,
+        className: student.class_name,
+        parentName: student.parent_name ?? "",
+        address: student.address ?? "",
       });
     }
 

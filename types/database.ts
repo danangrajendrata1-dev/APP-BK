@@ -658,7 +658,38 @@ export type Database = {
         Relationships: [];
       };
     };
-    Views: Record<string, never>;
+    Views: {
+      v_student_class_options: {
+        Row: {
+          class_name: string;
+        };
+      };
+      v_student_count_by_class: {
+        Row: {
+          class_name: string;
+          total_students: number;
+        };
+      };
+      v_students_with_relations: {
+        Row: {
+          id: string;
+          nisn: string;
+          full_name: string;
+          gender: string;
+          class_name: string;
+          major: string;
+          major_code: string;
+          birth_place_date: string | null;
+          address: string | null;
+          phone: string | null;
+          parent_name: string | null;
+          parent_phone: string | null;
+          status: "Aktif" | "Lulus" | "Pindah" | "Off";
+          created_at: string;
+          updated_at: string;
+        };
+      };
+    };
     Functions: Record<string, never>;
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;

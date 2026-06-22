@@ -87,7 +87,7 @@ export async function getCounselingRecords(
   const to = from + pageSize - 1;
 
   let query = supabase
-    .from("counseling_records")
+    .from("v_counseling_records_with_relations" as never)
     .select(COUNSELING_RECORD_LIST_COLUMNS, { count: "exact" })
     .order("counseling_date", { ascending: false })
     .range(from, to);
@@ -125,7 +125,7 @@ export async function getCounselingRecords(
 
   const totalItems = count ?? 0;
   return {
-    items: (data ?? []).map(mapCounselingRecord),
+    items: ((data ?? []) as CounselingListRow[]).map(mapCounselingRecord),
     filters,
     pagination: {
       page,
@@ -142,7 +142,7 @@ export async function createCounselingRecord(
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("counseling_records")
-    .insert(mapCounselingPayload(values))
+    .insert(mapCounselingPayload(values) as never)
     .select("*")
     .single();
 
@@ -155,5 +155,5 @@ export async function createCounselingRecord(
       buildSupabaseErrorMessage("Gagal menyimpan catatan konseling", error),
     );
   }
-  return mapCounselingRecord(data);
+  return mapCounselingRecord(data as CounselingListRow);
 }

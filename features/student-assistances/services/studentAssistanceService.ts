@@ -1,5 +1,9 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { buildSupabaseErrorMessage, logSupabaseError } from "@/lib/supabase/error";
+import {
+  buildSupabaseErrorMessage,
+  isMissingSchemaError,
+  logSupabaseError,
+} from "@/lib/supabase/error";
 import type { Database } from "@/types/database";
 import type { StudentAssistanceFormValues } from "@/features/student-assistances/types/studentAssistance";
 import type { StudentAssistanceItem, StudentAssistanceListQuery, StudentAssistanceListResult } from "@/features/student-assistances/types/studentAssistance";
@@ -129,6 +133,18 @@ export async function getStudentAssistances(
       pageSize,
       filters,
     });
+    if (isMissingSchemaError(error)) {
+      return {
+        items: [],
+        filters,
+        pagination: {
+          page,
+          pageSize,
+          totalItems: 0,
+          totalPages: 1,
+        },
+      };
+    }
     throw new Error(
       buildSupabaseErrorMessage(
         "Gagal memuat catatan pendampingan siswa per bulan",
@@ -139,7 +155,7 @@ export async function getStudentAssistances(
 
   const totalItems = count ?? 0;
   return {
-    items: (data ?? []).map(mapAssistanceRow),
+    items: ((data ?? []) as AssistanceListRow[]).map(mapAssistanceRow),
     filters,
     pagination: {
       page,
@@ -156,7 +172,7 @@ export async function createStudentAssistance(
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("student_assistances")
-    .insert(mapAssistancePayload(values))
+    .insert(mapAssistancePayload(values) as never)
     .select("*")
     .single();
   if (error) {
@@ -172,5 +188,5 @@ export async function createStudentAssistance(
       ),
     );
   }
-  return mapAssistanceRow(data);
+  return mapAssistanceRow(data as AssistanceListRow);
 }

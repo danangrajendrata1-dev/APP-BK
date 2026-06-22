@@ -1,7 +1,11 @@
 import { ASSESSMENT_TYPE_OPTIONS } from "@/lib/constants/options";
 import { SCHOOL_ATTENDANCE_STATUS_OPTIONS } from "@/lib/constants/options";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { buildSupabaseErrorMessage, logSupabaseError } from "@/lib/supabase/error";
+import {
+  buildSupabaseErrorMessage,
+  isMissingSchemaError,
+  logSupabaseError,
+} from "@/lib/supabase/error";
 
 import type {
   ChartItem,
@@ -13,6 +17,51 @@ import type {
 
 const MONTH_LABELS = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
 const REPORT_SECTION_ROW_LIMIT = 100;
+
+type StudentAssistanceListRow = {
+  assistance_month: number;
+  assistance_year: number;
+  student_name: string;
+  class_name: string;
+  total: number | null;
+  description: string | null;
+};
+
+type StudentAssistanceStatsRow = {
+  student_name: string;
+  total: number | null;
+  day_1: string | null;
+  day_2: string | null;
+  day_3: string | null;
+  day_4: string | null;
+  day_5: string | null;
+  day_6: string | null;
+  day_7: string | null;
+  day_8: string | null;
+  day_9: string | null;
+  day_10: string | null;
+  day_11: string | null;
+  day_12: string | null;
+  day_13: string | null;
+  day_14: string | null;
+  day_15: string | null;
+  day_16: string | null;
+  day_17: string | null;
+  day_18: string | null;
+  day_19: string | null;
+  day_20: string | null;
+  day_21: string | null;
+  day_22: string | null;
+  day_23: string | null;
+  day_24: string | null;
+  day_25: string | null;
+  day_26: string | null;
+  day_27: string | null;
+  day_28: string | null;
+  day_29: string | null;
+  day_30: string | null;
+  day_31: string | null;
+};
 
 function toMonthLabel(month: number) {
   return MONTH_LABELS[month - 1] ?? String(month);
@@ -140,7 +189,7 @@ export async function getReportsData(filters: ReportsFilters): Promise<ReportsDa
   };
 
   let attendanceQuery = supabase
-    .from("school_attendance")
+    .from("v_school_attendance_with_relations" as never)
     .select("attendance_date, student_name, class_name, status, description");
   attendanceQuery = applyClassFilter(applyDateFilter(attendanceQuery, "attendance_date"));
   attendanceQuery = attendanceQuery
@@ -148,7 +197,7 @@ export async function getReportsData(filters: ReportsFilters): Promise<ReportsDa
     .limit(REPORT_SECTION_ROW_LIMIT);
 
   let counselingQuery = supabase
-    .from("counseling_records")
+    .from("v_counseling_records_with_relations" as never)
     .select("counseling_date, student_name, class_name, meeting_number, media, counseling_type, topic, counseling_result, follow_up, description");
   counselingQuery = applyClassFilter(applyDateFilter(counselingQuery, "counseling_date"));
   counselingQuery = counselingQuery
@@ -187,7 +236,7 @@ export async function getReportsData(filters: ReportsFilters): Promise<ReportsDa
     .limit(REPORT_SECTION_ROW_LIMIT);
 
   let documentsQuery = supabase
-    .from("documents")
+    .from("v_bk_documents_with_relations" as never)
     .select("document_date, student_name, class_name, document_type, letter_number, description");
   documentsQuery = applyClassFilter(applyDateFilter(documentsQuery, "document_date"));
   documentsQuery = documentsQuery
@@ -196,7 +245,7 @@ export async function getReportsData(filters: ReportsFilters): Promise<ReportsDa
     .limit(REPORT_SECTION_ROW_LIMIT);
 
   let homeVisitsQuery = supabase
-    .from("home_visits")
+    .from("v_home_visits_with_relations" as never)
     .select("visit_date, student_name, class_name, parent_name, address, visit_result, follow_up");
   homeVisitsQuery = applyClassFilter(applyDateFilter(homeVisitsQuery, "visit_date"));
   homeVisitsQuery = homeVisitsQuery
@@ -209,14 +258,14 @@ export async function getReportsData(filters: ReportsFilters): Promise<ReportsDa
   studentsQuery = applyClassFilter(studentsQuery);
 
   let bkServiceAttendanceQuery = supabase
-    .from("bk_service_attendance")
+    .from("v_bk_service_attendance_with_relations" as never)
     .select("service_date, student_name, class_name");
   bkServiceAttendanceQuery = applyClassFilter(
     applyDateFilter(bkServiceAttendanceQuery, "service_date"),
   );
 
   let counselingStatsQuery = supabase
-    .from("counseling_records")
+    .from("v_counseling_records_with_relations" as never)
     .select("student_name, class_name");
   counselingStatsQuery = applyClassFilter(
     applyDateFilter(counselingStatsQuery, "counseling_date"),
@@ -246,14 +295,14 @@ export async function getReportsData(filters: ReportsFilters): Promise<ReportsDa
   classAssistanceStatsQuery = applyClassFilter(classAssistanceStatsQuery);
 
   let attendanceCountQuery = supabase
-    .from("school_attendance")
+    .from("v_school_attendance_with_relations" as never)
     .select("id", { count: "exact", head: true });
   attendanceCountQuery = applyClassFilter(
     applyDateFilter(attendanceCountQuery, "attendance_date"),
   );
 
   let counselingCountQuery = supabase
-    .from("counseling_records")
+    .from("v_counseling_records_with_relations" as never)
     .select("id", { count: "exact", head: true });
   counselingCountQuery = applyClassFilter(
     applyDateFilter(counselingCountQuery, "counseling_date"),
@@ -283,14 +332,14 @@ export async function getReportsData(filters: ReportsFilters): Promise<ReportsDa
   classAssistanceCountQuery = applyClassFilter(classAssistanceCountQuery);
 
   let parentCallCountQuery = supabase
-    .from("documents")
+    .from("v_bk_documents_with_relations" as never)
     .select("id", { count: "exact", head: true });
   parentCallCountQuery = applyClassFilter(
     applyDateFilter(parentCallCountQuery, "document_date"),
   ).ilike("document_type", parentCallPattern);
 
   let homeVisitsCountQuery = supabase
-    .from("home_visits")
+    .from("v_home_visits_with_relations" as never)
     .select("id", { count: "exact", head: true });
   homeVisitsCountQuery = applyClassFilter(
     applyDateFilter(homeVisitsCountQuery, "visit_date"),
@@ -326,7 +375,7 @@ export async function getReportsData(filters: ReportsFilters): Promise<ReportsDa
     homeVisitsQuery,
     studentsQuery,
     bkServiceAttendanceQuery,
-    supabase.from("assessment_files").select("assessment_type"),
+    supabase.from("v_assessment_files_with_relations" as never).select("assessment_type"),
     counselingStatsQuery,
     studentAssistanceStatsQuery,
     classAssistanceStatsQuery,
@@ -339,7 +388,7 @@ export async function getReportsData(filters: ReportsFilters): Promise<ReportsDa
     Promise.all(
       SCHOOL_ATTENDANCE_STATUS_OPTIONS.map((option) => {
         let statusCountQuery = supabase
-          .from("school_attendance")
+          .from("v_school_attendance_with_relations" as never)
           .select("id", { count: "exact", head: true });
         statusCountQuery = applyClassFilter(
           applyDateFilter(statusCountQuery, "attendance_date"),
@@ -350,7 +399,7 @@ export async function getReportsData(filters: ReportsFilters): Promise<ReportsDa
     Promise.all(
       counselingMonthPeriods.map((period) => {
         let counselingMonthCountQuery = supabase
-          .from("counseling_records")
+          .from("v_counseling_records_with_relations" as never)
           .select("id", { count: "exact", head: true });
         counselingMonthCountQuery = applyClassFilter(counselingMonthCountQuery);
         return counselingMonthCountQuery
@@ -360,27 +409,27 @@ export async function getReportsData(filters: ReportsFilters): Promise<ReportsDa
     ),
   ]);
 
-  if (attendanceResult.error) logSupabaseError("[Reports] school_attendance list", attendanceResult.error, { filters, dateRange });
-  if (counselingResult.error) logSupabaseError("[Reports] counseling_records list", counselingResult.error, { filters, dateRange });
+  if (attendanceResult.error) logSupabaseError("[Reports] v_school_attendance_with_relations list", attendanceResult.error, { filters, dateRange });
+  if (counselingResult.error) logSupabaseError("[Reports] v_counseling_records_with_relations list", counselingResult.error, { filters, dateRange });
   if (studentAssistanceResult.error) logSupabaseError("[Reports] student_assistances list", studentAssistanceResult.error, { filters });
   if (classAssistanceResult.error) logSupabaseError("[Reports] class_assistances list", classAssistanceResult.error, { filters });
-  if (documentsResult.error) logSupabaseError("[Reports] documents list", documentsResult.error, { filters, dateRange });
-  if (homeVisitsResult.error) logSupabaseError("[Reports] home_visits list", homeVisitsResult.error, { filters, dateRange });
+  if (documentsResult.error) logSupabaseError("[Reports] v_bk_documents_with_relations list", documentsResult.error, { filters, dateRange });
+  if (homeVisitsResult.error) logSupabaseError("[Reports] v_home_visits_with_relations list", homeVisitsResult.error, { filters, dateRange });
   if (studentsResult.error) logSupabaseError("[Reports] v_student_count_by_class", studentsResult.error, { filters });
-  if (bkServiceAttendanceResult.error) logSupabaseError("[Reports] bk_service_attendance", bkServiceAttendanceResult.error, { filters, dateRange });
-  if (assessmentFilesResult.error) logSupabaseError("[Reports] assessment_files", assessmentFilesResult.error, { filters });
-  if (counselingStatsResult.error) logSupabaseError("[Reports] counseling_records stats", counselingStatsResult.error, { filters, dateRange });
+  if (bkServiceAttendanceResult.error) logSupabaseError("[Reports] v_bk_service_attendance_with_relations", bkServiceAttendanceResult.error, { filters, dateRange });
+  if (assessmentFilesResult.error) logSupabaseError("[Reports] v_assessment_files_with_relations", assessmentFilesResult.error, { filters });
+  if (counselingStatsResult.error) logSupabaseError("[Reports] v_counseling_records_with_relations stats", counselingStatsResult.error, { filters, dateRange });
   if (studentAssistanceStatsResult.error) logSupabaseError("[Reports] student_assistances stats", studentAssistanceStatsResult.error, { filters });
   if (classAssistanceStatsResult.error) logSupabaseError("[Reports] class_assistances stats", classAssistanceStatsResult.error, { filters });
-  if (attendanceCountResult.error) logSupabaseError("[Reports] school_attendance count", attendanceCountResult.error, { filters, dateRange });
-  if (counselingCountResult.error) logSupabaseError("[Reports] counseling_records count", counselingCountResult.error, { filters, dateRange });
+  if (attendanceCountResult.error) logSupabaseError("[Reports] v_school_attendance_with_relations count", attendanceCountResult.error, { filters, dateRange });
+  if (counselingCountResult.error) logSupabaseError("[Reports] v_counseling_records_with_relations count", counselingCountResult.error, { filters, dateRange });
   if (studentAssistanceCountResult.error) logSupabaseError("[Reports] student_assistances count", studentAssistanceCountResult.error, { filters });
   if (classAssistanceCountResult.error) logSupabaseError("[Reports] class_assistances count", classAssistanceCountResult.error, { filters });
-  if (parentCallCountResult.error) logSupabaseError("[Reports] documents parent-call count", parentCallCountResult.error, { filters, dateRange });
-  if (homeVisitsCountResult.error) logSupabaseError("[Reports] home_visits count", homeVisitsCountResult.error, { filters, dateRange });
+  if (parentCallCountResult.error) logSupabaseError("[Reports] v_bk_documents_with_relations parent-call count", parentCallCountResult.error, { filters, dateRange });
+  if (homeVisitsCountResult.error) logSupabaseError("[Reports] v_home_visits_with_relations count", homeVisitsCountResult.error, { filters, dateRange });
   attendanceStatusCountResults.forEach((result, index) => {
     if (result.error) {
-      logSupabaseError("[Reports] school_attendance status count", result.error, {
+      logSupabaseError("[Reports] v_school_attendance_with_relations status count", result.error, {
         status: SCHOOL_ATTENDANCE_STATUS_OPTIONS[index]?.value ?? null,
         filters,
         dateRange,
@@ -389,30 +438,49 @@ export async function getReportsData(filters: ReportsFilters): Promise<ReportsDa
   });
   counselingPerMonthCountResults.forEach((result, index) => {
     if (result.error) {
-      logSupabaseError("[Reports] counseling_records month count", result.error, {
+      logSupabaseError("[Reports] v_counseling_records_with_relations month count", result.error, {
         period: counselingMonthPeriods[index],
         filters,
       });
     }
   });
 
+  const studentAssistanceListMissingSchema = isMissingSchemaError(
+    studentAssistanceResult.error,
+  );
+  const studentAssistanceStatsMissingSchema = isMissingSchemaError(
+    studentAssistanceStatsResult.error,
+  );
+  const studentAssistanceCountMissingSchema = isMissingSchemaError(
+    studentAssistanceCountResult.error,
+  );
+  const classAssistanceListMissingSchema = isMissingSchemaError(
+    classAssistanceResult.error,
+  );
+  const classAssistanceStatsMissingSchema = isMissingSchemaError(
+    classAssistanceStatsResult.error,
+  );
+  const classAssistanceCountMissingSchema = isMissingSchemaError(
+    classAssistanceCountResult.error,
+  );
+
   if (
     attendanceResult.error ||
     counselingResult.error ||
-    studentAssistanceResult.error ||
-    classAssistanceResult.error ||
+    (studentAssistanceResult.error && !studentAssistanceListMissingSchema) ||
+    (classAssistanceResult.error && !classAssistanceListMissingSchema) ||
     documentsResult.error ||
     homeVisitsResult.error ||
     studentsResult.error ||
     bkServiceAttendanceResult.error ||
     assessmentFilesResult.error ||
     counselingStatsResult.error ||
-    studentAssistanceStatsResult.error ||
-    classAssistanceStatsResult.error ||
+    (studentAssistanceStatsResult.error && !studentAssistanceStatsMissingSchema) ||
+    (classAssistanceStatsResult.error && !classAssistanceStatsMissingSchema) ||
     attendanceCountResult.error ||
     counselingCountResult.error ||
-    studentAssistanceCountResult.error ||
-    classAssistanceCountResult.error ||
+    (studentAssistanceCountResult.error && !studentAssistanceCountMissingSchema) ||
+    (classAssistanceCountResult.error && !classAssistanceCountMissingSchema) ||
     parentCallCountResult.error ||
     homeVisitsCountResult.error ||
     attendanceStatusCountResults.some((result) => result.error) ||
@@ -421,20 +489,32 @@ export async function getReportsData(filters: ReportsFilters): Promise<ReportsDa
     const firstError =
       attendanceResult.error ??
       counselingResult.error ??
-      studentAssistanceResult.error ??
-      classAssistanceResult.error ??
+      (studentAssistanceResult.error && !studentAssistanceListMissingSchema
+        ? studentAssistanceResult.error
+        : null) ??
+      (classAssistanceResult.error && !classAssistanceListMissingSchema
+        ? classAssistanceResult.error
+        : null) ??
       documentsResult.error ??
       homeVisitsResult.error ??
       studentsResult.error ??
       bkServiceAttendanceResult.error ??
       assessmentFilesResult.error ??
       counselingStatsResult.error ??
-      studentAssistanceStatsResult.error ??
-      classAssistanceStatsResult.error ??
+      (studentAssistanceStatsResult.error && !studentAssistanceStatsMissingSchema
+        ? studentAssistanceStatsResult.error
+        : null) ??
+      (classAssistanceStatsResult.error && !classAssistanceStatsMissingSchema
+        ? classAssistanceStatsResult.error
+        : null) ??
       attendanceCountResult.error ??
       counselingCountResult.error ??
-      studentAssistanceCountResult.error ??
-      classAssistanceCountResult.error ??
+      (studentAssistanceCountResult.error && !studentAssistanceCountMissingSchema
+        ? studentAssistanceCountResult.error
+        : null) ??
+      (classAssistanceCountResult.error && !classAssistanceCountMissingSchema
+        ? classAssistanceCountResult.error
+        : null) ??
       parentCallCountResult.error ??
       homeVisitsCountResult.error ??
       attendanceStatusCountResults.find((result) => result.error)?.error ??
@@ -446,7 +526,60 @@ export async function getReportsData(filters: ReportsFilters): Promise<ReportsDa
     );
   }
 
-  const attendanceRows = (attendanceResult.data ?? [])
+  const attendanceRowsSource = (attendanceResult.data ?? []) as Array<{
+    attendance_date: string;
+    student_name: string;
+    class_name: string;
+    status: string;
+    description: string | null;
+  }>;
+  const counselingRowsSource = (counselingResult.data ?? []) as Array<{
+    counseling_date: string;
+    student_name: string;
+    class_name: string;
+    meeting_number: number | null;
+    media: string;
+    counseling_type: string;
+    topic: string | null;
+    counseling_result: string | null;
+    follow_up: string | null;
+    description: string | null;
+  }>;
+  const documentsRowsSource = (documentsResult.data ?? []) as Array<{
+    document_date: string;
+    letter_number: string;
+    student_name: string;
+    class_name: string | null;
+    document_type: string;
+    description: string | null;
+  }>;
+  const homeVisitsRowsSource = (homeVisitsResult.data ?? []) as Array<{
+    visit_date: string;
+    student_name: string;
+    parent_name: string | null;
+    class_name: string;
+    address: string | null;
+    visit_result: string | null;
+    follow_up: string | null;
+  }>;
+  const bkServiceAttendanceRowsSource = (bkServiceAttendanceResult.data ?? []) as Array<{
+    student_name: string;
+    class_name: string;
+  }>;
+  const counselingStatsRowsSource = (counselingStatsResult.data ?? []) as Array<{
+    student_name: string;
+    class_name: string;
+  }>;
+  const classAssistanceStatsRowsSource = classAssistanceStatsMissingSchema
+    ? []
+    : ((classAssistanceStatsResult.data ?? []) as Array<{
+        violation_type: string | null;
+      }>);
+  const assessmentFilesRowsSource = (assessmentFilesResult.data ?? []) as Array<{
+    assessment_type: string;
+  }>;
+
+  const attendanceRows = attendanceRowsSource
     .map((row) => ({
       Tanggal: row.attendance_date,
       "Nama Siswa": row.student_name,
@@ -455,7 +588,7 @@ export async function getReportsData(filters: ReportsFilters): Promise<ReportsDa
       Keterangan: normalize(row.description),
     }));
 
-  const counselingRows = (counselingResult.data ?? [])
+  const counselingRows = counselingRowsSource
     .map((row) => ({
       Tanggal: row.counseling_date,
       "Nama Siswa": row.student_name,
@@ -469,16 +602,25 @@ export async function getReportsData(filters: ReportsFilters): Promise<ReportsDa
       Keterangan: normalize(row.description),
     }));
 
-  const studentAssistanceRows = (studentAssistanceResult.data ?? [])
-    .map((row) => ({
-      Bulan: `${toMonthLabel(row.assistance_month)} ${row.assistance_year}`,
-      "Nama Siswa": row.student_name,
-      Kelas: row.class_name,
-      Jumlah: row.total,
-      Keterangan: normalize(row.description),
-    }));
+  const studentAssistanceRowsSource = studentAssistanceListMissingSchema
+    ? []
+    : ((studentAssistanceResult.data ?? []) as StudentAssistanceListRow[]);
+  const studentAssistanceStatsRowsSource = studentAssistanceStatsMissingSchema
+    ? []
+    : ((studentAssistanceStatsResult.data ?? []) as StudentAssistanceStatsRow[]);
+  const studentAssistanceTotal = studentAssistanceCountMissingSchema
+    ? 0
+    : studentAssistanceCountResult.count ?? 0;
 
-  const parentCallRows = (documentsResult.data ?? [])
+  const studentAssistanceRows = studentAssistanceRowsSource.map((row) => ({
+    Bulan: `${toMonthLabel(row.assistance_month)} ${row.assistance_year}`,
+    "Nama Siswa": row.student_name,
+    Kelas: row.class_name,
+    Jumlah: row.total ?? 0,
+    Keterangan: normalize(row.description),
+  }));
+
+  const parentCallRows = documentsRowsSource
     .map((row) => ({
       Tanggal: row.document_date,
       "Nomor Surat": row.letter_number,
@@ -488,7 +630,7 @@ export async function getReportsData(filters: ReportsFilters): Promise<ReportsDa
       Keterangan: normalize(row.description),
     }));
 
-  const homeVisitRows = (homeVisitsResult.data ?? [])
+  const homeVisitRows = homeVisitsRowsSource
     .map((row) => ({
       Tanggal: row.visit_date,
       "Nama Siswa": row.student_name,
@@ -511,8 +653,9 @@ export async function getReportsData(filters: ReportsFilters): Promise<ReportsDa
 
   const attendanceTotal = attendanceCountResult.count ?? 0;
   const counselingTotal = counselingCountResult.count ?? 0;
-  const studentAssistanceTotal = studentAssistanceCountResult.count ?? 0;
-  const classAssistanceTotal = classAssistanceCountResult.count ?? 0;
+  const classAssistanceTotal = classAssistanceCountMissingSchema
+    ? 0
+    : classAssistanceCountResult.count ?? 0;
   const parentCallTotal = parentCallCountResult.count ?? 0;
   const homeVisitTotal = homeVisitsCountResult.count ?? 0;
 
@@ -540,13 +683,13 @@ export async function getReportsData(filters: ReportsFilters): Promise<ReportsDa
   ];
 
   const studentsMostServedMap = new Map<string, number>();
-  (bkServiceAttendanceResult.data ?? []).forEach((row) => {
+  bkServiceAttendanceRowsSource.forEach((row) => {
     studentsMostServedMap.set(row.student_name, (studentsMostServedMap.get(row.student_name) ?? 0) + 1);
   });
-  (counselingStatsResult.data ?? []).forEach((row) => {
+  counselingStatsRowsSource.forEach((row) => {
     studentsMostServedMap.set(row.student_name, (studentsMostServedMap.get(row.student_name) ?? 0) + 1);
   });
-  (studentAssistanceStatsResult.data ?? []).forEach((row) => {
+  studentAssistanceStatsRowsSource.forEach((row) => {
     studentsMostServedMap.set(row.student_name, (studentsMostServedMap.get(row.student_name) ?? 0) + (row.total ?? 0));
   });
 
@@ -559,7 +702,7 @@ export async function getReportsData(filters: ReportsFilters): Promise<ReportsDa
   });
 
   const topAssistanceTopicsMap = new Map<string, number>();
-  (studentAssistanceStatsResult.data ?? []).forEach((row) => {
+  studentAssistanceStatsRowsSource.forEach((row) => {
     for (let day = 1; day <= 31; day += 1) {
       const key = row[`day_${day}` as keyof typeof row];
       if (typeof key === "string" && key) {
@@ -567,7 +710,7 @@ export async function getReportsData(filters: ReportsFilters): Promise<ReportsDa
       }
     }
   });
-  (classAssistanceStatsResult.data ?? []).forEach((row) => {
+  classAssistanceStatsRowsSource.forEach((row) => {
     const violationType = normalize(row.violation_type);
     if (violationType) {
       topAssistanceTopicsMap.set(violationType, (topAssistanceTopicsMap.get(violationType) ?? 0) + 1);
@@ -575,10 +718,10 @@ export async function getReportsData(filters: ReportsFilters): Promise<ReportsDa
   });
 
   const classesMostServedMap = new Map<string, number>();
-  (bkServiceAttendanceResult.data ?? []).forEach((row) => {
+  bkServiceAttendanceRowsSource.forEach((row) => {
     classesMostServedMap.set(row.class_name, (classesMostServedMap.get(row.class_name) ?? 0) + 1);
   });
-  (counselingStatsResult.data ?? []).forEach((row) => {
+  counselingStatsRowsSource.forEach((row) => {
     classesMostServedMap.set(row.class_name, (classesMostServedMap.get(row.class_name) ?? 0) + 1);
   });
 
@@ -658,7 +801,7 @@ export async function getReportsData(filters: ReportsFilters): Promise<ReportsDa
     },
     assessmentChecklist: ASSESSMENT_TYPE_OPTIONS.map((option) => ({
       assessmentType: option.value,
-      available: (assessmentFilesResult.data ?? []).some((item) => item.assessment_type === option.value),
+      available: assessmentFilesRowsSource.some((item) => item.assessment_type === option.value),
     })),
     summary: {
       attendanceRows: attendanceTotal,

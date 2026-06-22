@@ -1,5 +1,9 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { buildSupabaseErrorMessage, logSupabaseError } from "@/lib/supabase/error";
+import {
+  buildSupabaseErrorMessage,
+  isMissingSchemaError,
+  logSupabaseError,
+} from "@/lib/supabase/error";
 import type { Database } from "@/types/database";
 import type { ClassAssistanceFormValues } from "@/types/common";
 import type { ClassAssistanceItem, ClassAssistanceListQuery, ClassAssistanceListResult } from "@/features/class-assistances/types/classAssistance";
@@ -81,6 +85,18 @@ export async function getClassAssistances(
       pageSize,
       filters,
     });
+    if (isMissingSchemaError(error)) {
+      return {
+        items: [],
+        filters,
+        pagination: {
+          page,
+          pageSize,
+          totalItems: 0,
+          totalPages: 1,
+        },
+      };
+    }
     throw new Error(
       buildSupabaseErrorMessage(
         "Gagal memuat daftar pendampingan siswa per kelas",
@@ -91,7 +107,7 @@ export async function getClassAssistances(
 
   const totalItems = count ?? 0;
   return {
-    items: (data ?? []).map(mapClassAssistance),
+    items: ((data ?? []) as ClassAssistanceListRow[]).map(mapClassAssistance),
     filters,
     pagination: {
       page,
@@ -108,7 +124,7 @@ export async function createClassAssistance(
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("class_assistances")
-    .insert(mapClassAssistancePayload(values))
+    .insert(mapClassAssistancePayload(values) as never)
     .select("*")
     .single();
   if (error) {
@@ -123,5 +139,5 @@ export async function createClassAssistance(
       ),
     );
   }
-  return mapClassAssistance(data);
+  return mapClassAssistance(data as ClassAssistanceListRow);
 }

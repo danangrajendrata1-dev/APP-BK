@@ -1,9 +1,19 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { buildSupabaseErrorMessage, logSupabaseError } from "@/lib/supabase/error";
+import {
+  buildSupabaseErrorMessage,
+  isMissingSchemaError,
+  logSupabaseError,
+} from "@/lib/supabase/error";
 
 import type { DashboardSeriesItem, DashboardSummary } from "@/features/dashboard/types/dashboard";
 
 const MONTH_LABELS = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+
+type StudentAssistanceSummaryRow = {
+  assistance_month: number;
+  assistance_year: number;
+  total: number | null;
+};
 
 function sortSeriesDescending(series: DashboardSeriesItem[]) {
   return [...series].sort((a, b) => b.value - a.value);
@@ -96,9 +106,9 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
       // TODO: Tahap berikutnya pindahkan agregasi assistance per month ke SQL view/RPC
       // agar dashboard tidak perlu mengambil semua baris dalam rentang bulan lalu menjumlahkannya di aplikasi.
       .or(assistanceRangeFilter),
-    supabase.from("documents").select("id", { count: "exact", head: true }),
+    supabase.from("bk_documents").select("id", { count: "exact", head: true }),
     supabase.from("home_visits").select("id", { count: "exact", head: true }),
-    supabase.from("confession_box").select("id", { count: "exact", head: true }),
+    supabase.from("digital_confessions").select("id", { count: "exact", head: true }),
   ]);
 
   if (studentsResult.error) {
@@ -121,22 +131,27 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
       assistanceEndYear,
       assistanceEndMonth,
     });
+    if (!isMissingSchemaError(assistanceResult.error)) {
+      throw new Error(
+        buildSupabaseErrorMessage("Gagal memuat ringkasan dashboard", assistanceResult.error),
+      );
+    }
   }
   if (documentsResult.error) {
-    logSupabaseError("[Dashboard] documents count", documentsResult.error);
+    logSupabaseError("[Dashboard] bk_documents count", documentsResult.error);
   }
   if (homeVisitsResult.error) {
     logSupabaseError("[Dashboard] home_visits count", homeVisitsResult.error);
   }
   if (confessionsResult.error) {
-    logSupabaseError("[Dashboard] confession_box count", confessionsResult.error);
+    logSupabaseError("[Dashboard] digital_confessions count", confessionsResult.error);
   }
 
   if (
     studentsResult.error ||
     studentsPerClassResult.error ||
     counselingCountResults.some((result) => result.error) ||
-    assistanceResult.error ||
+    (assistanceResult.error && !isMissingSchemaError(assistanceResult.error)) ||
     documentsResult.error ||
     homeVisitsResult.error ||
     confessionsResult.error
@@ -145,7 +160,9 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
       studentsResult.error ??
       studentsPerClassResult.error ??
       counselingCountResults.find((result) => result.error)?.error ??
-      assistanceResult.error ??
+      (assistanceResult.error && !isMissingSchemaError(assistanceResult.error)
+        ? assistanceResult.error
+        : null) ??
       documentsResult.error ??
       homeVisitsResult.error ??
       confessionsResult.error ??
@@ -160,7 +177,11 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
     class_name: string | null;
     total_students: number | null;
   }>;
-  const assistances = assistanceResult.data ?? [];
+  const assistances: StudentAssistanceSummaryRow[] = isMissingSchemaError(
+    assistanceResult.error,
+  )
+    ? []
+    : ((assistanceResult.data ?? []) as StudentAssistanceSummaryRow[]);
 
   const assistancePerMonthMap = new Map<string, number>();
   assistances.forEach((record) => {
@@ -196,7 +217,7 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
       {
         label: "Jumlah Surat Terbit",
         value: documentsResult.count ?? 0,
-        helper: "Data dari tabel documents",
+        helper: "Data dari tabel bk_documents",
       },
       {
         label: "Jumlah Home Visit",
@@ -206,7 +227,7 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
       {
         label: "Jumlah Curhat Digital",
         value: confessionsResult.count ?? 0,
-        helper: "Data dari tabel confession_box",
+        helper: "Data dari tabel digital_confessions",
       },
     ],
     studentsPerClass: sortSeriesDescending(

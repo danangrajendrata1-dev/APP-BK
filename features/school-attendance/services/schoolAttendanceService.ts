@@ -31,7 +31,7 @@ type SchoolAttendanceListRow = Pick<
 type SchoolAttendanceInsert =
   Database["public"]["Tables"]["school_attendance"]["Insert"];
 type StudentReferenceRow = Pick<
-  Database["public"]["Tables"]["students"]["Row"],
+  Database["public"]["Views"]["v_students_with_relations"]["Row"],
   "id" | "full_name" | "class_name" | "parent_name" | "address"
 >;
 
@@ -81,7 +81,7 @@ function mapSchoolAttendancePayload(
 export async function getStudentReferences(): Promise<StudentReference[]> {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
-    .from("students")
+    .from("v_students_with_relations")
     .select("id, full_name, class_name, parent_name, address")
     .order("full_name", { ascending: true });
 
@@ -92,7 +92,7 @@ export async function getStudentReferences(): Promise<StudentReference[]> {
     );
   }
 
-  return (data ?? []).map(mapStudentReference);
+  return ((data ?? []) as StudentReferenceRow[]).map(mapStudentReference);
 }
 
 export async function getSchoolAttendances(
@@ -106,7 +106,7 @@ export async function getSchoolAttendances(
   const to = from + pageSize - 1;
 
   let query = supabase
-    .from("school_attendance")
+    .from("v_school_attendance_with_relations" as never)
     .select(SCHOOL_ATTENDANCE_LIST_COLUMNS, { count: "exact" })
     .order("attendance_date", { ascending: false })
     .range(from, to);
@@ -149,7 +149,7 @@ export async function getSchoolAttendances(
   const totalItems = count ?? 0;
 
   return {
-    items: (data ?? []).map(mapSchoolAttendance),
+    items: ((data ?? []) as SchoolAttendanceListRow[]).map(mapSchoolAttendance),
     filters,
     pagination: {
       page,
@@ -167,7 +167,7 @@ export async function createSchoolAttendance(
   const payload = mapSchoolAttendancePayload(values);
   const { data, error } = await supabase
     .from("school_attendance")
-    .insert(payload)
+    .insert(payload as never)
     .select("*")
     .single();
 
@@ -181,5 +181,5 @@ export async function createSchoolAttendance(
     );
   }
 
-  return mapSchoolAttendance(data);
+  return mapSchoolAttendance(data as SchoolAttendanceListRow);
 }

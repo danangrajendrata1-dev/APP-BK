@@ -80,7 +80,7 @@ export async function getAssessments(
   const to = from + pageSize - 1;
 
   let query = supabase
-    .from("assessment_files")
+    .from("v_assessment_files_with_relations" as never)
     .select(ASSESSMENT_LIST_COLUMNS, { count: "exact" })
     .order("updated_at", { ascending: false })
     .range(from, to);
@@ -101,7 +101,9 @@ export async function getAssessments(
     );
   }
 
-  const items = await Promise.all((data ?? []).map(mapAssessment));
+  const items = await Promise.all(
+    ((data ?? []) as AssessmentListRow[]).map(mapAssessment),
+  );
   const totalItems = count ?? 0;
   return {
     items,
@@ -134,7 +136,7 @@ export async function createAssessment(
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("assessment_files")
-    .insert(mapAssessmentPayload(values, filePath, fileUrl))
+    .insert(mapAssessmentPayload(values, filePath, fileUrl) as never)
     .select("*")
     .single();
 
@@ -145,5 +147,5 @@ export async function createAssessment(
     });
     throw new Error(buildSupabaseErrorMessage("Gagal menyimpan file asesmen", error));
   }
-  return mapAssessment(data);
+  return mapAssessment(data as AssessmentListRow);
 }

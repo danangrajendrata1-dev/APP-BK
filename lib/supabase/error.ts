@@ -43,3 +43,13 @@ export function buildSupabaseErrorMessage(
 ) {
   return `${context}: ${formatSupabaseErrorDetails(error)}`;
 }
+
+export function isMissingSchemaError(
+  error: SupabaseErrorLike | null | undefined,
+) {
+  return (
+    error?.code === "42703" ||
+    error?.code === "42P01" ||
+    error?.code === "PGRST205"
+  );
+}

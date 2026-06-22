@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { logSupabaseError } from "@/lib/supabase/error";
+import type { Database } from "@/types/database";
 
 import { useDebouncedValue } from "@/components/shared/useDebouncedValue";
 
@@ -26,6 +27,8 @@ type StudentSearchSelectProps = {
   selectedClass?: string;
   value: StudentSearchOption | null;
 };
+
+type StudentSearchRow = Database["public"]["Views"]["v_students_with_relations"]["Row"];
 
 function formatStudentLabel(student: StudentSearchOption) {
   return student.nis
@@ -76,12 +79,12 @@ export function StudentSearchSelect({
 
     let isCancelled = false;
 
-    async function searchStudents() {
-      setIsLoading(true);
-      setErrorMessage("");
+      async function searchStudents() {
+        setIsLoading(true);
+        setErrorMessage("");
 
-      let query = supabase
-        .from("students")
+        let query = supabase
+        .from("v_students_with_relations")
         .select("id, full_name, nisn, class_name")
         .or(`full_name.ilike.%${keyword}%,nisn.ilike.%${keyword}%`)
         .order("full_name", { ascending: true })
@@ -108,8 +111,10 @@ export function StudentSearchSelect({
         return;
       }
 
+      const studentRows = (data ?? []) as StudentSearchRow[];
+
       setResults(
-        (data ?? []).map((student) => ({
+        studentRows.map((student) => ({
           id: student.id,
           fullName: student.full_name,
           nis: student.nisn,

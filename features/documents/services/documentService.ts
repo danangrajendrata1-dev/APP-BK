@@ -18,7 +18,7 @@ const DEFAULT_PAGE = 1;
 const DEFAULT_PAGE_SIZE = 20;
 const DOCUMENT_BUCKET = "document-files";
 const DOCUMENT_LIST_COLUMNS =
-  "id, letter_number, document_date, student_id, student_name, class_name, document_type, file_path, description";
+  "id, letter_number, document_date, student_id, student_name, class_name, document_type, file_url, description";
 const DOCUMENT_ALLOWED_TYPES = [
   "application/pdf",
   "application/msword",
@@ -38,7 +38,7 @@ type DocumentListRow = Pick<
   | "student_name"
   | "class_name"
   | "document_type"
-  | "file_path"
+  | "file_url"
   | "description"
 >;
 type DocumentInsert = Database["public"]["Tables"]["documents"]["Insert"];
@@ -48,10 +48,8 @@ function normalizeText(value: string | null | undefined) {
 }
 
 async function mapDocument(row: DocumentListRow): Promise<DocumentItem> {
-  const filePath = normalizeText(row.file_path);
-  const fileUrl = filePath
-    ? ((await createSignedFileUrl(DOCUMENT_BUCKET, filePath)) ?? "")
-    : "";
+  const filePath = "";
+  const fileUrl = normalizeText(row.file_url);
 
   return {
     id: row.id,
@@ -96,7 +94,7 @@ export async function getDocuments(
   const to = from + pageSize - 1;
 
   let query = supabase
-    .from("documents")
+    .from("v_bk_documents_with_relations" as never)
     .select(DOCUMENT_LIST_COLUMNS, { count: "exact" })
     .order("document_date", { ascending: false })
     .range(from, to);
@@ -116,7 +114,9 @@ export async function getDocuments(
     throw new Error(buildSupabaseErrorMessage("Gagal memuat surat dan dokumen", error));
   }
 
-  const items = await Promise.all((data ?? []).map(mapDocument));
+  const items = await Promise.all(
+    ((data ?? []) as DocumentListRow[]).map(mapDocument),
+  );
   const totalItems = count ?? 0;
 
   return {
@@ -150,7 +150,7 @@ export async function createDocument(
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("documents")
-    .insert(mapDocumentPayload(values, filePath, fileUrl))
+    .insert(mapDocumentPayload(values, filePath, fileUrl) as never)
     .select("*")
     .single();
 
@@ -163,5 +163,5 @@ export async function createDocument(
     throw new Error(buildSupabaseErrorMessage("Gagal menyimpan surat dan dokumen", error));
   }
 
-  return mapDocument(data);
+  return mapDocument(data as DocumentListRow);
 }

@@ -12,11 +12,11 @@ import type {
 const DEFAULT_PAGE = 1;
 const DEFAULT_PAGE_SIZE = 20;
 const STUDENT_LIST_PAGE_COLUMNS =
-  "id, nisn, full_name, gender, class_name, major, status";
+  "id, nisn, full_name, gender, class_name, major, major_code, status";
 const STUDENT_DETAIL_COLUMNS =
-  "id, nisn, full_name, gender, class_name, major, birth_place_date, address, phone, parent_name, parent_phone, status, created_at, updated_at";
+  "id, nisn, full_name, gender, class_name, major, major_code, birth_place_date, address, phone, parent_name, parent_phone, status, created_at, updated_at";
 
-type StudentRow = Database["public"]["Tables"]["students"]["Row"];
+type StudentRow = Database["public"]["Views"]["v_students_with_relations"]["Row"];
 type StudentListRow = Pick<
   StudentRow,
   | "id"
@@ -25,6 +25,7 @@ type StudentListRow = Pick<
   | "gender"
   | "class_name"
   | "major"
+  | "major_code"
   | "status"
 >;
 type StudentDetailRow = Pick<
@@ -35,6 +36,7 @@ type StudentDetailRow = Pick<
   | "gender"
   | "class_name"
   | "major"
+  | "major_code"
   | "birth_place_date"
   | "address"
   | "phone"
@@ -116,7 +118,7 @@ export async function getStudents(
   const to = from + pageSize - 1;
 
   let query = supabase
-    .from("students")
+    .from("v_students_with_relations")
     .select(STUDENT_LIST_PAGE_COLUMNS, { count: "exact" })
     .order("full_name", { ascending: true })
     .range(from, to);
@@ -134,7 +136,8 @@ export async function getStudents(
   }
 
   if (filters.major) {
-    query = query.ilike("major", `%${filters.major}%`);
+    const majorPattern = `%${filters.major}%`;
+    query = query.or(`major.ilike.${majorPattern},major_code.ilike.${majorPattern}`);
   }
 
   if (filters.status) {
@@ -155,7 +158,7 @@ export async function getStudents(
   const totalItems = count ?? 0;
 
   return {
-    items: (data ?? []).map(mapStudent),
+    items: ((data ?? []) as StudentListRow[]).map(mapStudent),
     filters,
     pagination: {
       page,
@@ -169,7 +172,7 @@ export async function getStudents(
 export async function getStudentById(id: string): Promise<Student | null> {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
-    .from("students")
+    .from("v_students_with_relations")
     .select(STUDENT_DETAIL_COLUMNS)
     .eq("id", id)
     .maybeSingle();
@@ -179,7 +182,7 @@ export async function getStudentById(id: string): Promise<Student | null> {
     throw new Error(buildSupabaseErrorMessage("Gagal memuat detail siswa", error));
   }
 
-  return data ? mapStudentDetail(data) : null;
+  return data ? mapStudentDetail(data as StudentDetailRow) : null;
 }
 
 export async function createStudent(values: StudentFormValues): Promise<Student> {
@@ -187,7 +190,7 @@ export async function createStudent(values: StudentFormValues): Promise<Student>
   const payload = mapStudentPayload(values);
   const { data, error } = await supabase
     .from("students")
-    .insert(payload)
+    .insert(payload as never)
     .select("*")
     .single();
 
@@ -200,7 +203,7 @@ export async function createStudent(values: StudentFormValues): Promise<Student>
     throw new Error(buildSupabaseErrorMessage("Gagal menambahkan data siswa", error));
   }
 
-  return mapStudent(data);
+  return mapStudent(data as StudentListRow);
 }
 
 export async function updateStudent(
@@ -211,7 +214,7 @@ export async function updateStudent(
   const payload: StudentUpdate = mapStudentPayload(values);
   const { data, error } = await supabase
     .from("students")
-    .update(payload)
+    .update(payload as never)
     .eq("id", id)
     .select("*")
     .single();
@@ -225,7 +228,7 @@ export async function updateStudent(
     throw new Error(buildSupabaseErrorMessage("Gagal memperbarui data siswa", error));
   }
 
-  return mapStudent(data);
+  return mapStudent(data as StudentListRow);
 }
 
 export async function deleteStudent(id: string): Promise<void> {
