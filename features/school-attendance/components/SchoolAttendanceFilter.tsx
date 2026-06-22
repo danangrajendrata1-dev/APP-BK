@@ -1,19 +1,12 @@
-import { Button } from "@/components/ui/Button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/Card";
-import { Input } from "@/components/ui/Input";
-import { Select } from "@/components/ui/Select";
-import { SCHOOL_ATTENDANCE_STATUS_OPTIONS } from "@/lib/constants/options";
+"use client";
 
-import type { SchoolAttendanceFilters } from "@/features/school-attendance/types/schoolAttendance";
+import { useRef } from "react";
 
 type SchoolAttendanceFilterProps = {
-  filters: SchoolAttendanceFilters;
+  classOptions: string[];
+  selectedClass: string;
+  selectedMonth: number;
+  selectedYear: number;
 };
 
 const MONTH_OPTIONS = Array.from({ length: 12 }, (_, index) => ({
@@ -22,56 +15,64 @@ const MONTH_OPTIONS = Array.from({ length: 12 }, (_, index) => ({
 }));
 
 export function SchoolAttendanceFilter({
-  filters,
+  classOptions,
+  selectedClass,
+  selectedMonth,
+  selectedYear,
 }: SchoolAttendanceFilterProps) {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Filter Presensi Sekolah</CardTitle>
-        <CardDescription>
-          Saring data berdasarkan bulan, tahun, kelas, dan status.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <Select
-            name="month"
-            label="Bulan"
-            options={MONTH_OPTIONS}
-            defaultValue={filters.month ? String(filters.month) : ""}
-            placeholder="Semua bulan"
-          />
-          <Input
-            name="year"
-            label="Tahun"
-            type="number"
-            min={2000}
-            max={2100}
-            defaultValue={filters.year ? String(filters.year) : ""}
-            placeholder="Contoh: 2026"
-          />
-          <Input
-            name="className"
-            label="Kelas"
-            defaultValue={filters.className}
-            placeholder="Contoh: X-TKJ-1"
-          />
-          <Select
-            name="status"
-            label="Status"
-            options={[...SCHOOL_ATTENDANCE_STATUS_OPTIONS]}
-            defaultValue={filters.status}
-            placeholder="Semua status"
-          />
+  const formRef = useRef<HTMLFormElement | null>(null);
 
-          <div className="flex flex-col gap-3 md:col-span-2 xl:col-span-4 xl:flex-row xl:justify-end">
-            <Button type="submit">Terapkan Filter</Button>
-            <Button href="/school-attendance" variant="outline">
-              Reset Filter
-            </Button>
-          </div>
-        </form>
-      </CardContent>
-    </Card>
+  return (
+    <form className="flex flex-col gap-3 border border-slate-500 bg-white px-2 py-2 md:flex-row md:items-end" method="get" ref={formRef}>
+      <label className="flex min-w-0 flex-1 flex-col gap-1">
+        <span className="text-xs font-semibold uppercase tracking-wide text-slate-800">
+          Kelas
+        </span>
+        <select
+          className="h-9 border border-slate-500 bg-white px-2 text-sm text-slate-900 outline-none"
+          defaultValue={selectedClass}
+          name="className"
+          onChange={() => formRef.current?.requestSubmit()}
+        >
+          <option value="">Pilih kelas</option>
+          {classOptions.map((className) => (
+            <option key={className} value={className}>
+              {className}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="flex w-24 flex-col gap-1">
+        <span className="text-xs font-semibold uppercase tracking-wide text-slate-800">
+          Bulan
+        </span>
+        <select
+          className="h-9 border border-slate-500 bg-white px-2 text-sm text-slate-900 outline-none"
+          defaultValue={String(selectedMonth)}
+          name="month"
+          onChange={() => formRef.current?.requestSubmit()}
+        >
+          {MONTH_OPTIONS.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="flex w-28 flex-col gap-1">
+        <span className="text-xs font-semibold uppercase tracking-wide text-slate-800">
+          Tahun
+        </span>
+        <input
+          className="h-9 border border-slate-500 bg-white px-2 text-sm text-slate-900 outline-none"
+          defaultValue={String(selectedYear)}
+          min={2000}
+          max={2100}
+          name="year"
+          onBlur={() => formRef.current?.requestSubmit()}
+          type="number"
+        />
+      </label>
+    </form>
   );
 }

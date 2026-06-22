@@ -27,8 +27,11 @@ export const APP_NAV_ITEMS: AppNavItem[] = [
   { label: "Dashboard", href: "/dashboard" },
   { label: "Inventori dan Asesmen", href: "/assessments" },
   { label: "Data Siswa", href: "/students" },
-  { label: "Presensi Sekolah", href: "/school-attendance" },
-  { label: "Presensi Layanan BK", href: "/bk-service-attendance" },
+  { label: "Daftar Hadir Sekolah", href: "/school-attendance" },
+  {
+    label: "Daftar Hadir dan Catatan Kunjungan BK",
+    href: "/bk-service-attendance",
+  },
   { label: "Catatan Konseling", href: "/counseling-records" },
   {
     label: "Catatan Pendampingan Siswa Per Bulan",

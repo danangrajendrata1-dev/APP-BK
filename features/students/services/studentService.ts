@@ -1,5 +1,9 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { buildSupabaseErrorMessage, logSupabaseError } from "@/lib/supabase/error";
+import {
+  buildSupabaseErrorMessage,
+  isMissingSchemaError,
+  logSupabaseError,
+} from "@/lib/supabase/error";
 import type { Database } from "@/types/database";
 import type { StudentFormValues } from "@/types/common";
 
@@ -12,7 +16,7 @@ import type {
 const DEFAULT_PAGE = 1;
 const DEFAULT_PAGE_SIZE = 20;
 const STUDENT_LIST_PAGE_COLUMNS =
-  "id, nisn, full_name, gender, class_name, major, major_code, status";
+  "id, nisn, full_name, gender, class_name, major, major_code, birth_place_date, address, phone, parent_name, status";
 const STUDENT_DETAIL_COLUMNS =
   "id, nisn, full_name, gender, class_name, major, major_code, birth_place_date, address, phone, parent_name, parent_phone, status, created_at, updated_at";
 
@@ -26,6 +30,10 @@ type StudentListRow = Pick<
   | "class_name"
   | "major"
   | "major_code"
+  | "birth_place_date"
+  | "address"
+  | "phone"
+  | "parent_name"
   | "status"
 >;
 type StudentDetailRow = Pick<
@@ -53,18 +61,27 @@ function normalizeText(value: string | null | undefined) {
   return value ?? "";
 }
 
+function normalizeGender(value: string) {
+  const normalized = value.trim().toLowerCase();
+
+  if (normalized.startsWith("l")) return "L";
+  if (normalized.startsWith("p")) return "P";
+
+  return value;
+}
+
 function mapStudent(row: StudentListRow): Student {
   return {
     id: row.id,
     nisn: row.nisn,
     fullName: row.full_name,
-    gender: row.gender,
+    gender: normalizeGender(row.gender),
     className: row.class_name,
     major: row.major,
-    birthPlaceDate: "",
-    address: "",
-    phone: "",
-    parentName: "",
+    birthPlaceDate: normalizeText(row.birth_place_date),
+    address: normalizeText(row.address),
+    phone: normalizeText(row.phone),
+    parentName: normalizeText(row.parent_name),
     parentPhone: "",
     status: row.status,
     createdAt: "",
@@ -167,6 +184,25 @@ export async function getStudents(
       totalPages: Math.max(1, Math.ceil(totalItems / pageSize)),
     },
   };
+}
+
+export async function getStudentClassOptions(): Promise<string[]> {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("v_student_class_options")
+    .select("class_name")
+    .order("class_name", { ascending: true });
+
+  if (error) {
+    logSupabaseError("[Students] getStudentClassOptions", error, {});
+    if (isMissingSchemaError(error)) {
+      return [];
+    }
+
+    return [];
+  }
+
+  return ((data ?? []) as Array<{ class_name: string }>).map((row) => row.class_name);
 }
 
 export async function getStudentById(id: string): Promise<Student | null> {

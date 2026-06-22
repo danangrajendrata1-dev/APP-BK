@@ -1,72 +1,47 @@
-import { Button } from "@/components/ui/Button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/Card";
-import { Input } from "@/components/ui/Input";
-import { Select } from "@/components/ui/Select";
-import { STUDENT_STATUS_OPTIONS } from "@/lib/constants/options";
+"use client";
 
-import type { StudentFilters } from "@/features/students/types/student";
+import { useRef } from "react";
+
+import { Button } from "@/components/ui/Button";
 
 type StudentFilterProps = {
-  filters: StudentFilters;
+  classOptions: string[];
+  selectedClass?: string;
 };
 
-export function StudentFilter({ filters }: StudentFilterProps) {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Filter Data Siswa</CardTitle>
-        <CardDescription>
-          Cari siswa berdasarkan nama, NISN, kelas, jurusan, atau status.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-          <Input
-            name="fullName"
-            label="Nama Siswa"
-            placeholder="Cari nama siswa"
-            defaultValue={filters.fullName}
-          />
-          <Input
-            name="nisn"
-            label="NISN"
-            placeholder="Cari NISN"
-            defaultValue={filters.nisn}
-          />
-          <Input
-            name="className"
-            label="Kelas"
-            placeholder="Contoh: X-TKJ-1"
-            defaultValue={filters.className}
-          />
-          <Input
-            name="major"
-            label="Jurusan"
-            placeholder="Contoh: TKJ"
-            defaultValue={filters.major}
-          />
-          <Select
-            name="status"
-            label="Status"
-            options={[...STUDENT_STATUS_OPTIONS]}
-            defaultValue={filters.status}
-            placeholder="Semua status"
-          />
+export function StudentFilter({
+  classOptions,
+  selectedClass = "",
+}: StudentFilterProps) {
+  const formRef = useRef<HTMLFormElement | null>(null);
 
-          <div className="flex flex-col gap-3 md:col-span-2 md:flex-row md:items-end xl:col-span-5 xl:justify-end">
-            <Button type="submit">Terapkan Filter</Button>
-            <Button href="/students" variant="outline">
-              Reset Filter
-            </Button>
-          </div>
-        </form>
-      </CardContent>
-    </Card>
+  return (
+    <div className="flex flex-col gap-3 border border-slate-400 bg-white px-3 py-2 md:flex-row md:items-end md:justify-between">
+      <form ref={formRef} className="w-full max-w-sm" method="get">
+        <label className="block space-y-1">
+          <span className="text-xs font-semibold uppercase tracking-wide text-slate-700">
+            Kelas
+          </span>
+          <select
+            className="h-9 w-full border border-slate-500 bg-white px-2 text-sm text-slate-900 outline-none"
+            defaultValue={selectedClass}
+            name="className"
+            onChange={() => formRef.current?.requestSubmit()}
+          >
+            <option value="">Pilih kelas</option>
+            {classOptions.map((className) => (
+              <option key={className} value={className}>
+                {className}
+              </option>
+            ))}
+          </select>
+        </label>
+      </form>
+      <div className="flex items-center justify-end">
+        <Button href="/students/create" size="sm">
+          Tambah Data Siswa
+        </Button>
+      </div>
+    </div>
   );
 }

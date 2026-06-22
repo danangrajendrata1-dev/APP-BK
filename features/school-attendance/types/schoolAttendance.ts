@@ -1,8 +1,5 @@
 import type {
-  PaginationMeta,
   SchoolAttendanceFormValues,
-  SchoolAttendanceStatus,
-  TableQueryParams,
 } from "@/types/common";
 
 export type StudentReference = {
@@ -13,32 +10,30 @@ export type StudentReference = {
   address?: string;
 };
 
-export type SchoolAttendanceItem = {
-  id: string;
-  attendanceDate: string;
-  studentId: string;
-  studentName: string;
-  className: string;
-  status: SchoolAttendanceStatus;
-  description: string;
-  createdAt: string;
-  updatedAt: string;
-};
-
 export type SchoolAttendanceFilters = {
   month?: number;
   year?: number;
   className?: string;
-  status?: SchoolAttendanceStatus;
 };
 
-export type SchoolAttendanceListQuery =
-  TableQueryParams<SchoolAttendanceFilters>;
+export type SchoolAttendanceGridRow = {
+  id: string;
+  studentId: string;
+  studentName: string;
+  className: string;
+  days: string[];
+  totalS: number;
+  totalI: number;
+  totalA: number;
+  description: string;
+};
 
 export type SchoolAttendanceListResult = {
-  items: SchoolAttendanceItem[];
+  items: SchoolAttendanceGridRow[];
   filters: SchoolAttendanceFilters;
-  pagination: PaginationMeta;
+  month: number;
+  year: number;
+  className: string;
 };
 
 export type SchoolAttendanceFormErrors = Partial<

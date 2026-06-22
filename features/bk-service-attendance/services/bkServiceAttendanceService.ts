@@ -12,7 +12,7 @@ import type {
 const DEFAULT_PAGE = 1;
 const DEFAULT_PAGE_SIZE = 20;
 const BK_SERVICE_ATTENDANCE_LIST_COLUMNS =
-  "id, service_date, student_id, student_name, class_name, arrival_time, finish_time, purpose, service_type, counselor_name, description, created_at, updated_at";
+  "id, service_date, student_name, class_name, purpose, description";
 
 type BkServiceAttendanceRow =
   Database["public"]["Tables"]["bk_service_attendance"]["Row"];
@@ -20,17 +20,10 @@ type BkServiceAttendanceListRow = Pick<
   BkServiceAttendanceRow,
   | "id"
   | "service_date"
-  | "student_id"
   | "student_name"
   | "class_name"
-  | "arrival_time"
-  | "finish_time"
   | "purpose"
-  | "service_type"
-  | "counselor_name"
   | "description"
-  | "created_at"
-  | "updated_at"
 >;
 type BkServiceAttendanceInsert =
   Database["public"]["Tables"]["bk_service_attendance"]["Insert"];
@@ -61,17 +54,17 @@ function mapBkServiceAttendance(
   return {
     id: row.id,
     serviceDate: row.service_date,
-    studentId: row.student_id ?? "",
+    studentId: "",
     studentName: row.student_name,
     className: row.class_name,
-    arrivalTime: normalizeText(row.arrival_time),
-    finishTime: normalizeText(row.finish_time),
+    arrivalTime: "",
+    finishTime: "",
     purpose: normalizePurpose(row.purpose),
-    serviceType: row.service_type,
-    counselorName: normalizeText(row.counselor_name),
+    serviceType: "Layanan Dasar",
+    counselorName: "",
     description: normalizeText(row.description),
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
+    createdAt: "",
+    updatedAt: "",
   };
 }
 
