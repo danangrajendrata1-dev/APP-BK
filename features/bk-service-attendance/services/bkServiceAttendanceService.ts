@@ -12,18 +12,22 @@ import type {
 const DEFAULT_PAGE = 1;
 const DEFAULT_PAGE_SIZE = 20;
 const BK_SERVICE_ATTENDANCE_LIST_COLUMNS =
-  "id, service_date, student_name, class_name, purpose, description";
+  "id, visit_date, student_id, student_name, class_name, purpose, description, result, follow_up, signature";
 
 type BkServiceAttendanceRow =
   Database["public"]["Tables"]["bk_service_attendance"]["Row"];
 type BkServiceAttendanceListRow = Pick<
   BkServiceAttendanceRow,
   | "id"
-  | "service_date"
+  | "visit_date"
+  | "student_id"
   | "student_name"
   | "class_name"
   | "purpose"
   | "description"
+  | "result"
+  | "follow_up"
+  | "signature"
 >;
 type BkServiceAttendanceInsert =
   Database["public"]["Tables"]["bk_service_attendance"]["Insert"];
@@ -53,16 +57,15 @@ function mapBkServiceAttendance(
 ): BkServiceAttendanceItem {
   return {
     id: row.id,
-    serviceDate: row.service_date,
-    studentId: "",
+    serviceDate: row.visit_date,
+    studentId: row.student_id ?? "",
     studentName: row.student_name,
     className: row.class_name,
-    arrivalTime: "",
-    finishTime: "",
     purpose: normalizePurpose(row.purpose),
-    serviceType: "Layanan Dasar",
-    counselorName: "",
     description: normalizeText(row.description),
+    result: normalizeText(row.result),
+    followUp: normalizeText(row.follow_up),
+    signature: normalizeText(row.signature),
     createdAt: "",
     updatedAt: "",
   };
@@ -72,16 +75,15 @@ function mapBkServiceAttendancePayload(
   values: BkServiceAttendanceFormValues,
 ): BkServiceAttendanceInsert {
   return {
-    service_date: values.serviceDate,
+    visit_date: values.serviceDate,
     student_id: values.studentId || null,
     student_name: values.studentName,
     class_name: values.className,
-    arrival_time: values.arrivalTime,
-    finish_time: values.finishTime,
     purpose: values.purpose,
-    service_type: values.serviceType,
-    counselor_name: values.counselorName,
     description: values.description || null,
+    result: values.result || null,
+    follow_up: values.followUp || null,
+    signature: values.signature || null,
   };
 }
 
@@ -98,37 +100,29 @@ export async function getBkServiceAttendances(
   let query = supabase
     .from("v_bk_service_attendance_with_relations" as never)
     .select(BK_SERVICE_ATTENDANCE_LIST_COLUMNS, { count: "exact" })
-    .order("service_date", { ascending: false })
+    .order("visit_date", { ascending: false })
     .range(from, to);
 
   if (filters.month) {
     query = query.gte(
-      "service_date",
+      "visit_date",
       `${filters.year ?? new Date().getFullYear()}-${String(filters.month).padStart(2, "0")}-01`,
     );
     const monthEnd = new Date(filters.year ?? new Date().getFullYear(), filters.month, 0)
       .toISOString()
       .slice(0, 10);
-    query = query.lte("service_date", monthEnd);
+    query = query.lte("visit_date", monthEnd);
   } else if (filters.year) {
-    query = query.gte("service_date", `${filters.year}-01-01`);
-    query = query.lte("service_date", `${filters.year}-12-31`);
+    query = query.gte("visit_date", `${filters.year}-01-01`);
+    query = query.lte("visit_date", `${filters.year}-12-31`);
   }
 
   if (filters.className) {
-    query = query.ilike("class_name", `%${filters.className}%`);
+    query = query.eq("class_name", filters.className);
   }
 
   if (filters.purpose) {
     query = query.eq("purpose", filters.purpose);
-  }
-
-  if (filters.serviceType) {
-    query = query.eq("service_type", filters.serviceType);
-  }
-
-  if (filters.counselorName) {
-    query = query.ilike("counselor_name", `%${filters.counselorName}%`);
   }
 
   const { data, count, error } = await query;
@@ -140,7 +134,7 @@ export async function getBkServiceAttendances(
       filters,
     });
     throw new Error(
-      buildSupabaseErrorMessage("Gagal memuat data presensi layanan BK", error),
+      buildSupabaseErrorMessage("Gagal memuat data daftar hadir dan catatan kunjungan BK", error),
     );
   }
 
@@ -167,7 +161,7 @@ export async function createBkServiceAttendance(
   const { data, error } = await supabase
     .from("bk_service_attendance")
     .insert(mapBkServiceAttendancePayload(values) as never)
-    .select("*")
+    .select(BK_SERVICE_ATTENDANCE_LIST_COLUMNS)
     .single();
 
   if (error) {
@@ -176,7 +170,7 @@ export async function createBkServiceAttendance(
       serviceDate: values.serviceDate,
     });
     throw new Error(
-      buildSupabaseErrorMessage("Gagal menyimpan presensi layanan BK", error),
+      buildSupabaseErrorMessage("Gagal menyimpan data daftar hadir dan catatan kunjungan BK", error),
     );
   }
 

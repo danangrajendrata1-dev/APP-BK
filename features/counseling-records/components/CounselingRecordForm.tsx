@@ -119,7 +119,7 @@ function CounselingRecordFormFields({
       <input type="hidden" name="studentName" value={studentName} />
       <input type="hidden" name="className" value={className} />
       <div className="flex justify-end">
-        <Button type="submit" isLoading={isPending}>Simpan Catatan Konseling</Button>
+        <Button type="submit" isLoading={isPending}>Simpan Catatan Pelanggaran</Button>
       </div>
     </form>
   );

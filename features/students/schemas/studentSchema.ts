@@ -19,12 +19,10 @@ export const EMPTY_STUDENT_FORM_VALUES: StudentFormValues = {
   fullName: "",
   gender: "",
   className: "",
-  major: "",
   birthPlaceDate: "",
   address: "",
   phone: "",
   parentName: "",
-  parentPhone: "",
   status: "Aktif",
 };
 
@@ -45,12 +43,10 @@ export function parseStudentFormData(formData: FormData): StudentFormValues {
     fullName: getTextValue(formData, "fullName"),
     gender: getTextValue(formData, "gender"),
     className: getTextValue(formData, "className"),
-    major: getTextValue(formData, "major"),
     birthPlaceDate: getTextValue(formData, "birthPlaceDate"),
     address: getTextValue(formData, "address"),
     phone: getTextValue(formData, "phone"),
     parentName: getTextValue(formData, "parentName"),
-    parentPhone: getTextValue(formData, "parentPhone"),
     status: (getTextValue(formData, "status") || "Aktif") as StudentStatus,
   };
 }
@@ -70,14 +66,12 @@ export function validateStudentForm(
 
   if (!values.gender) {
     errors.gender = BASIC_VALIDATION_RULES.required;
+  } else if (!["Laki-laki", "Perempuan"].includes(values.gender)) {
+    errors.gender = "Jenis kelamin tidak valid";
   }
 
   if (!values.className) {
     errors.className = BASIC_VALIDATION_RULES.required;
-  }
-
-  if (!values.major) {
-    errors.major = BASIC_VALIDATION_RULES.required;
   }
 
   if (!values.birthPlaceDate) {
@@ -94,10 +88,6 @@ export function validateStudentForm(
 
   if (!values.parentName) {
     errors.parentName = BASIC_VALIDATION_RULES.required;
-  }
-
-  if (!values.parentPhone) {
-    errors.parentPhone = BASIC_VALIDATION_RULES.required;
   }
 
   if (!values.status) {

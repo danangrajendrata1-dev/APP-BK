@@ -13,7 +13,6 @@ import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
 import {
   BK_SERVICE_PURPOSE_OPTIONS,
-  BK_SERVICE_TYPE_OPTIONS,
 } from "@/lib/constants/options";
 
 import { INITIAL_BK_SERVICE_ATTENDANCE_FORM_STATE } from "@/features/bk-service-attendance/schemas/bkServiceAttendanceSchema";
@@ -111,20 +110,6 @@ function BkServiceAttendanceFormFields({
             }
           }}
         />
-        <Input
-          type="time"
-          name="arrivalTime"
-          label="Jam Datang"
-          defaultValue={state.values.arrivalTime}
-          error={state.errors.arrivalTime}
-        />
-        <Input
-          type="time"
-          name="finishTime"
-          label="Jam Selesai"
-          defaultValue={state.values.finishTime}
-          error={state.errors.finishTime}
-        />
         <Select
           name="purpose"
           label="Keperluan"
@@ -132,28 +117,40 @@ function BkServiceAttendanceFormFields({
           defaultValue={state.values.purpose}
           error={state.errors.purpose}
         />
-        <Select
-          name="serviceType"
-          label="Jenis Layanan"
-          options={[...BK_SERVICE_TYPE_OPTIONS]}
-          defaultValue={state.values.serviceType}
-          error={state.errors.serviceType}
-        />
-        <Input
-          name="counselorName"
-          label="Guru BK"
-          defaultValue={state.values.counselorName}
-          error={state.errors.counselorName}
-          placeholder="Masukkan nama guru BK"
-        />
         <div className="md:col-span-2">
           <Textarea
             name="description"
             label="Keterangan"
             defaultValue={state.values.description}
+            error={state.errors.description}
             rows={4}
           />
         </div>
+        <div className="md:col-span-2">
+          <Textarea
+            name="result"
+            label="Hasil"
+            defaultValue={state.values.result}
+            error={state.errors.result}
+            rows={3}
+          />
+        </div>
+        <div className="md:col-span-2">
+          <Textarea
+            name="followUp"
+            label="Tindak Lanjut"
+            defaultValue={state.values.followUp}
+            error={state.errors.followUp}
+            rows={3}
+          />
+        </div>
+        <Input
+          name="signature"
+          label="TTD"
+          defaultValue={state.values.signature}
+          error={state.errors.signature}
+          placeholder="Nama atau paraf"
+        />
       </div>
 
       <input type="hidden" name="studentId" value={studentId} />
@@ -162,7 +159,7 @@ function BkServiceAttendanceFormFields({
 
       <div className="flex justify-end">
         <Button type="submit" isLoading={isPending}>
-          Simpan Presensi Layanan BK
+          Simpan Daftar Hadir dan Catatan Kunjungan BK
         </Button>
       </div>
     </form>
@@ -180,12 +177,11 @@ export function BkServiceAttendanceForm({
     state.values.studentId,
     state.values.studentName,
     state.values.className,
-    state.values.arrivalTime,
-    state.values.finishTime,
     state.values.purpose,
-    state.values.serviceType,
-    state.values.counselorName,
     state.values.description,
+    state.values.result,
+    state.values.followUp,
+    state.values.signature,
     state.message,
   ].join("|");
 

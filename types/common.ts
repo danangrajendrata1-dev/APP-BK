@@ -2,7 +2,6 @@ import type {
   ASSESSMENT_TYPE_OPTIONS,
   ASSISTANCE_CODE_OPTIONS,
   BK_SERVICE_PURPOSE_OPTIONS,
-  BK_SERVICE_TYPE_OPTIONS,
   CONFESSION_CATEGORY_OPTIONS,
   COUNSELING_MEDIA_OPTIONS,
   COUNSELING_TYPE_OPTIONS,
@@ -20,8 +19,6 @@ export type SchoolAttendanceStatus =
   (typeof SCHOOL_ATTENDANCE_STATUS_OPTIONS)[number]["value"];
 export type BkServicePurpose =
   (typeof BK_SERVICE_PURPOSE_OPTIONS)[number]["value"];
-export type BkServiceType =
-  (typeof BK_SERVICE_TYPE_OPTIONS)[number]["value"];
 export type CounselingMedia =
   (typeof COUNSELING_MEDIA_OPTIONS)[number]["value"];
 export type CounselingType =
@@ -58,7 +55,6 @@ export type DateRangeFilter = {
 
 export type StudentBaseFilter = SearchParams & {
   className?: string;
-  major?: string;
   status?: StudentStatus;
 };
 
@@ -79,20 +75,20 @@ export type StudentFormValues = {
   fullName: string;
   gender: string;
   className: string;
-  major: string;
   birthPlaceDate: string;
   address: string;
   phone: string;
   parentName: string;
-  parentPhone: string;
   status: StudentStatus;
 };
 
 export type SchoolAttendanceFormValues = {
-  attendanceDate: string;
   studentId?: string;
   studentName: string;
   className: string;
+  month: string;
+  year: string;
+  day: string;
   status: SchoolAttendanceStatus;
   description: string;
 };
@@ -102,12 +98,11 @@ export type BkServiceAttendanceFormValues = {
   studentId?: string;
   studentName: string;
   className: string;
-  arrivalTime: string;
-  finishTime: string;
   purpose: BkServicePurpose;
-  serviceType: BkServiceType;
-  counselorName: string;
   description: string;
+  result: string;
+  followUp: string;
+  signature: string;
 };
 
 export type CounselingRecordFormValues = {
@@ -136,12 +131,7 @@ export type ClassAssistanceFormValues = {
 };
 
 export type DocumentFormValues = {
-  letterNumber: string;
-  documentDate: string;
-  studentId?: string;
-  studentName: string;
-  className: string;
-  documentType: DocumentType;
+  title: string;
   description: string;
 };
 

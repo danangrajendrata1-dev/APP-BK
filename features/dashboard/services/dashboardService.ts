@@ -94,10 +94,10 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
     Promise.all(
       monthPeriods.map((period) =>
         supabase
-          .from("counseling_records")
+          .from("violation_records")
           .select("id", { count: "exact", head: true })
-          .gte("counseling_date", period.startDate)
-          .lte("counseling_date", period.endDate),
+          .gte("violation_date", period.startDate)
+          .lte("violation_date", period.endDate),
       ),
     ),
     supabase
@@ -106,9 +106,9 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
       // TODO: Tahap berikutnya pindahkan agregasi assistance per month ke SQL view/RPC
       // agar dashboard tidak perlu mengambil semua baris dalam rentang bulan lalu menjumlahkannya di aplikasi.
       .or(assistanceRangeFilter),
-    supabase.from("bk_documents").select("id", { count: "exact", head: true }),
+    supabase.from("documents").select("id", { count: "exact", head: true }),
     supabase.from("home_visits").select("id", { count: "exact", head: true }),
-    supabase.from("digital_confessions").select("id", { count: "exact", head: true }),
+    supabase.from("confession_box").select("id", { count: "exact", head: true }),
   ]);
 
   if (studentsResult.error) {
@@ -119,7 +119,7 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
   }
   counselingCountResults.forEach((result, index) => {
     if (result.error) {
-      logSupabaseError("[Dashboard] counseling_records count", result.error, {
+      logSupabaseError("[Dashboard] violation_records count", result.error, {
         period: monthPeriods[index],
       });
     }
@@ -138,13 +138,13 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
     }
   }
   if (documentsResult.error) {
-    logSupabaseError("[Dashboard] bk_documents count", documentsResult.error);
+    logSupabaseError("[Dashboard] documents count", documentsResult.error);
   }
   if (homeVisitsResult.error) {
     logSupabaseError("[Dashboard] home_visits count", homeVisitsResult.error);
   }
   if (confessionsResult.error) {
-    logSupabaseError("[Dashboard] digital_confessions count", confessionsResult.error);
+    logSupabaseError("[Dashboard] confession_box count", confessionsResult.error);
   }
 
   if (
@@ -217,7 +217,7 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
       {
         label: "Jumlah Surat Terbit",
         value: documentsResult.count ?? 0,
-        helper: "Data dari tabel bk_documents",
+        helper: "Data dari tabel documents",
       },
       {
         label: "Jumlah Home Visit",
@@ -227,7 +227,7 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
       {
         label: "Jumlah Curhat Digital",
         value: confessionsResult.count ?? 0,
-        helper: "Data dari tabel digital_confessions",
+        helper: "Data dari tabel confession_box",
       },
     ],
     studentsPerClass: sortSeriesDescending(

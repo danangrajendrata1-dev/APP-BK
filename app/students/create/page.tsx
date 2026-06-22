@@ -51,14 +51,14 @@ export default function CreateStudentPage() {
     <section className="space-y-6">
       <PageHeader
         title="Tambah Data Siswa"
-        description="Tambahkan data siswa untuk melengkapi data layanan BK."
+        description="Tambahkan data siswa sesuai field final yang diminta client."
       />
 
       <Card>
         <CardContent className="py-6">
           <StudentForm
             title="Form Data Siswa"
-            description="Lengkapi data siswa sesuai kebutuhan sekolah."
+            description="Isi NISN, nama lengkap, kelas, gender, TTL, alamat, nomor HP, nama orang tua/wali, dan status."
             submitLabel="Simpan Data Siswa"
             action={createStudentAction}
             initialValues={INITIAL_STUDENT_FORM_STATE.values}

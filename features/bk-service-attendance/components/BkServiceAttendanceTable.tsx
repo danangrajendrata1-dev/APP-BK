@@ -65,18 +65,24 @@ export function BkServiceAttendanceTable({
                   <td className="h-8 border border-slate-500 px-3 py-1 text-xs text-slate-900">
                     {item?.className ?? ""}
                   </td>
-                  <td className="h-8 border border-slate-500 px-3 py-1 text-xs text-slate-900">
-                    {item?.purpose ?? ""}
-                  </td>
-                  <td className="h-8 border border-slate-500 px-3 py-1 text-xs text-slate-900">
-                    {item?.description ?? ""}
-                  </td>
-                  <td className="h-8 border border-slate-500 px-3 py-1 text-center text-xs text-slate-900" />
-                  <td className="h-8 border border-slate-500 px-3 py-1 text-center text-xs text-slate-900" />
-                  <td className="h-8 border border-slate-500 px-3 py-1 text-center text-xs text-slate-900" />
-                </tr>
-              );
-            })}
+              <td className="h-8 border border-slate-500 px-3 py-1 text-xs text-slate-900">
+                {item?.purpose ?? ""}
+              </td>
+              <td className="h-8 border border-slate-500 px-3 py-1 text-xs text-slate-900">
+                {item?.description ?? ""}
+              </td>
+              <td className="h-8 border border-slate-500 px-3 py-1 text-xs text-slate-900">
+                {item?.result ?? ""}
+              </td>
+              <td className="h-8 border border-slate-500 px-3 py-1 text-xs text-slate-900">
+                {item?.followUp ?? ""}
+              </td>
+              <td className="h-8 border border-slate-500 px-3 py-1 text-xs text-slate-900">
+                {item?.signature ?? ""}
+              </td>
+            </tr>
+          );
+        })}
           </tbody>
         </table>
       </div>

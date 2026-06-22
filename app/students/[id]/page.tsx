@@ -56,7 +56,7 @@ export default async function StudentDetailPage({
           <div>
             <CardTitle>{student.fullName}</CardTitle>
             <CardDescription>
-              NISN {student.nisn} • {student.className} • {student.major}
+              NISN {student.nisn} • {student.className}
             </CardDescription>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -69,17 +69,12 @@ export default async function StudentDetailPage({
         <CardContent className="grid gap-4 md:grid-cols-2">
           <DetailItem label="NISN" value={student.nisn} />
           <DetailItem label="Nama Lengkap" value={student.fullName} />
-          <DetailItem label="Jenis Kelamin" value={student.gender} />
+          <DetailItem label="L / P" value={student.gender} />
           <DetailItem label="Kelas" value={student.className} />
-          <DetailItem label="Jurusan" value={student.major} />
-          <DetailItem
-            label="Tempat Tanggal Lahir"
-            value={student.birthPlaceDate}
-          />
+          <DetailItem label="TTL" value={student.birthPlaceDate} />
           <DetailItem label="Nomor HP" value={student.phone} />
           <DetailItem label="Nama Orang Tua/Wali" value={student.parentName} />
-          <DetailItem label="No HP Orang Tua" value={student.parentPhone} />
-          <DetailItem label="Status Siswa" value={student.status} />
+          <DetailItem label="Status" value={student.status} />
           <div className="md:col-span-2">
             <DetailItem label="Alamat" value={student.address} />
           </div>

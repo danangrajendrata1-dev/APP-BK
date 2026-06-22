@@ -13,21 +13,21 @@ export type Database = {
         Row: {
           id: string;
           full_name: string | null;
-          role: "admin" | "guru_bk" | "siswa";
+          role: "admin" | "guru_bk" | "kepala_sekolah" | "siswa";
           created_at: string;
           updated_at: string;
         };
         Insert: {
           id: string;
           full_name?: string | null;
-          role?: "admin" | "guru_bk" | "siswa";
+          role?: "admin" | "guru_bk" | "kepala_sekolah" | "siswa";
           created_at?: string;
           updated_at?: string;
         };
         Update: {
           id?: string;
           full_name?: string | null;
-          role?: "admin" | "guru_bk" | "siswa";
+          role?: "admin" | "guru_bk" | "kepala_sekolah" | "siswa";
           created_at?: string;
           updated_at?: string;
         };
@@ -40,12 +40,10 @@ export type Database = {
           full_name: string;
           gender: string;
           class_name: string;
-          major: string;
           birth_place_date: string | null;
           address: string | null;
           phone: string | null;
           parent_name: string | null;
-          parent_phone: string | null;
           status: "Aktif" | "Lulus" | "Pindah" | "Off";
           created_at: string;
           updated_at: string;
@@ -56,12 +54,10 @@ export type Database = {
           full_name: string;
           gender: string;
           class_name: string;
-          major: string;
           birth_place_date?: string | null;
           address?: string | null;
           phone?: string | null;
           parent_name?: string | null;
-          parent_phone?: string | null;
           status?: "Aktif" | "Lulus" | "Pindah" | "Off";
           created_at?: string;
           updated_at?: string;
@@ -72,12 +68,10 @@ export type Database = {
           full_name?: string;
           gender?: string;
           class_name?: string;
-          major?: string;
           birth_place_date?: string | null;
           address?: string | null;
           phone?: string | null;
           parent_name?: string | null;
-          parent_phone?: string | null;
           status?: "Aktif" | "Lulus" | "Pindah" | "Off";
           created_at?: string;
           updated_at?: string;
@@ -87,33 +81,42 @@ export type Database = {
       school_attendance: {
         Row: {
           id: string;
+          attendance_year: number;
+          attendance_month: number;
+          attendance_day: number;
           attendance_date: string;
-          student_id: string | null;
+          student_id: string;
           student_name: string;
           class_name: string;
-          status: "Hadir" | "Izin" | "Sakit" | "Alfa" | "Terlambat";
+          attendance_status: "S" | "I" | "A";
           description: string | null;
           created_at: string;
           updated_at: string;
         };
         Insert: {
           id?: string;
+          attendance_year: number;
+          attendance_month: number;
+          attendance_day: number;
           attendance_date: string;
-          student_id?: string | null;
+          student_id: string;
           student_name: string;
           class_name: string;
-          status: "Hadir" | "Izin" | "Sakit" | "Alfa" | "Terlambat";
+          attendance_status: "S" | "I" | "A";
           description?: string | null;
           created_at?: string;
           updated_at?: string;
         };
         Update: {
           id?: string;
+          attendance_year?: number;
+          attendance_month?: number;
+          attendance_day?: number;
           attendance_date?: string;
-          student_id?: string | null;
+          student_id?: string;
           student_name?: string;
           class_name?: string;
-          status?: "Hadir" | "Izin" | "Sakit" | "Alfa" | "Terlambat";
+          attendance_status?: "S" | "I" | "A";
           description?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -123,12 +126,10 @@ export type Database = {
       bk_service_attendance: {
         Row: {
           id: string;
-          service_date: string;
+          visit_date: string;
           student_id: string | null;
           student_name: string;
           class_name: string;
-          arrival_time: string | null;
-          finish_time: string | null;
           purpose:
             | "Konseling Individu"
             | "Konseling Kelompok"
@@ -137,24 +138,19 @@ export type Database = {
             | "Informasi Sekolah Lanjutan"
             | "Pemanggilan"
             | "Lainnya";
-          service_type:
-            | "Layanan Dasar"
-            | "Layanan Responsif"
-            | "Layanan Perencanaan Individual"
-            | "Layanan Dukungan Sistem";
-          counselor_name: string | null;
           description: string | null;
+          result: string | null;
+          follow_up: string | null;
+          signature: string | null;
           created_at: string;
           updated_at: string;
         };
         Insert: {
           id?: string;
-          service_date: string;
+          visit_date: string;
           student_id?: string | null;
           student_name: string;
           class_name: string;
-          arrival_time?: string | null;
-          finish_time?: string | null;
           purpose:
             | "Konseling Individu"
             | "Konseling Kelompok"
@@ -163,24 +159,19 @@ export type Database = {
             | "Informasi Sekolah Lanjutan"
             | "Pemanggilan"
             | "Lainnya";
-          service_type:
-            | "Layanan Dasar"
-            | "Layanan Responsif"
-            | "Layanan Perencanaan Individual"
-            | "Layanan Dukungan Sistem";
-          counselor_name?: string | null;
           description?: string | null;
+          result?: string | null;
+          follow_up?: string | null;
+          signature?: string | null;
           created_at?: string;
           updated_at?: string;
         };
         Update: {
           id?: string;
-          service_date?: string;
+          visit_date?: string;
           student_id?: string | null;
           student_name?: string;
           class_name?: string;
-          arrival_time?: string | null;
-          finish_time?: string | null;
           purpose?:
             | "Konseling Individu"
             | "Konseling Kelompok"
@@ -189,13 +180,10 @@ export type Database = {
             | "Informasi Sekolah Lanjutan"
             | "Pemanggilan"
             | "Lainnya";
-          service_type?:
-            | "Layanan Dasar"
-            | "Layanan Responsif"
-            | "Layanan Perencanaan Individual"
-            | "Layanan Dukungan Sistem";
-          counselor_name?: string | null;
           description?: string | null;
+          result?: string | null;
+          follow_up?: string | null;
+          signature?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -429,69 +417,78 @@ export type Database = {
       documents: {
         Row: {
           id: string;
-          letter_number: string;
-          document_date: string;
-          student_id: string | null;
-          student_name: string;
-          class_name: string | null;
-          document_type:
-            | "Surat Panggilan Orang Tua"
-            | "Surat Home Visit"
-            | "Surat Kontrak Perilaku Siswa"
-            | "Surat Pernyataan Siswa"
-            | "Surat Peringatan 1"
-            | "Surat Peringatan 2"
-            | "Surat Peringatan 3"
-            | "Berita Acara Panggilan Orang Tua"
-            | "Contoh Surat Pengunduran Diri";
-          file_url: string | null;
-          file_path: string | null;
+          title: string;
+          file_path: string;
+          file_name: string;
+          mime_type: string;
+          file_size: number;
           description: string | null;
           created_at: string;
           updated_at: string;
         };
         Insert: {
           id?: string;
-          letter_number: string;
-          document_date: string;
-          student_id?: string | null;
-          student_name: string;
-          class_name?: string | null;
-          document_type:
-            | "Surat Panggilan Orang Tua"
-            | "Surat Home Visit"
-            | "Surat Kontrak Perilaku Siswa"
-            | "Surat Pernyataan Siswa"
-            | "Surat Peringatan 1"
-            | "Surat Peringatan 2"
-            | "Surat Peringatan 3"
-            | "Berita Acara Panggilan Orang Tua"
-            | "Contoh Surat Pengunduran Diri";
-          file_url?: string | null;
-          file_path?: string | null;
+          title: string;
+          file_path: string;
+          file_name: string;
+          mime_type: string;
+          file_size: number;
           description?: string | null;
           created_at?: string;
           updated_at?: string;
         };
         Update: {
           id?: string;
-          letter_number?: string;
-          document_date?: string;
-          student_id?: string | null;
-          student_name?: string;
-          class_name?: string | null;
-          document_type?:
-            | "Surat Panggilan Orang Tua"
-            | "Surat Home Visit"
-            | "Surat Kontrak Perilaku Siswa"
-            | "Surat Pernyataan Siswa"
-            | "Surat Peringatan 1"
-            | "Surat Peringatan 2"
-            | "Surat Peringatan 3"
-            | "Berita Acara Panggilan Orang Tua"
-            | "Contoh Surat Pengunduran Diri";
-          file_url?: string | null;
+          title?: string;
           file_path?: string | null;
+          file_name?: string;
+          mime_type?: string;
+          file_size?: number;
+          description?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      violation_records: {
+        Row: {
+          id: string;
+          violation_year: number;
+          violation_month: number;
+          violation_day: number;
+          violation_date: string;
+          student_id: string;
+          student_name: string;
+          class_name: string;
+          violation_code: string | null;
+          description: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          violation_year: number;
+          violation_month: number;
+          violation_day: number;
+          violation_date: string;
+          student_id: string;
+          student_name: string;
+          class_name: string;
+          violation_code?: string | null;
+          description?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          violation_year?: number;
+          violation_month?: number;
+          violation_day?: number;
+          violation_date?: string;
+          student_id?: string;
+          student_name?: string;
+          class_name?: string;
+          violation_code?: string | null;
           description?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -677,13 +674,10 @@ export type Database = {
           full_name: string;
           gender: string;
           class_name: string;
-          major: string;
-          major_code: string;
           birth_place_date: string | null;
           address: string | null;
           phone: string | null;
           parent_name: string | null;
-          parent_phone: string | null;
           status: "Aktif" | "Lulus" | "Pindah" | "Off";
           created_at: string;
           updated_at: string;

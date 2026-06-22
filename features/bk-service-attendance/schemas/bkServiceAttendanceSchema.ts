@@ -1,12 +1,10 @@
 import {
   BK_SERVICE_PURPOSE_OPTIONS,
-  BK_SERVICE_TYPE_OPTIONS,
 } from "@/lib/constants/options";
 import {
   BASIC_VALIDATION_RULES,
   type BkServiceAttendanceFormValues,
   type BkServicePurpose,
-  type BkServiceType,
 } from "@/types/common";
 
 import type {
@@ -17,9 +15,6 @@ import type {
 const PURPOSE_VALUES = new Set(
   BK_SERVICE_PURPOSE_OPTIONS.map((option) => option.value),
 );
-const SERVICE_TYPE_VALUES = new Set(
-  BK_SERVICE_TYPE_OPTIONS.map((option) => option.value),
-);
 
 export const EMPTY_BK_SERVICE_ATTENDANCE_FORM_VALUES: BkServiceAttendanceFormValues =
   {
@@ -27,12 +22,11 @@ export const EMPTY_BK_SERVICE_ATTENDANCE_FORM_VALUES: BkServiceAttendanceFormVal
     studentId: "",
     studentName: "",
     className: "",
-    arrivalTime: "",
-    finishTime: "",
     purpose: "Konseling Individu",
-    serviceType: "Layanan Dasar",
-    counselorName: "",
     description: "",
+    result: "",
+    followUp: "",
+    signature: "",
   };
 
 export const INITIAL_BK_SERVICE_ATTENDANCE_FORM_STATE: BkServiceAttendanceFormState =
@@ -55,14 +49,12 @@ export function parseBkServiceAttendanceFormData(
     studentId: getTextValue(formData, "studentId"),
     studentName: getTextValue(formData, "studentName"),
     className: getTextValue(formData, "className"),
-    arrivalTime: getTextValue(formData, "arrivalTime"),
-    finishTime: getTextValue(formData, "finishTime"),
     purpose: (getTextValue(formData, "purpose") ||
       "Konseling Individu") as BkServicePurpose,
-    serviceType: (getTextValue(formData, "serviceType") ||
-      "Layanan Dasar") as BkServiceType,
-    counselorName: getTextValue(formData, "counselorName"),
     description: getTextValue(formData, "description"),
+    result: getTextValue(formData, "result"),
+    followUp: getTextValue(formData, "followUp"),
+    signature: getTextValue(formData, "signature"),
   };
 }
 
@@ -87,37 +79,16 @@ export function validateBkServiceAttendanceForm(
     errors.className = "Kelas belum terisi";
   }
 
-  if (!values.arrivalTime) {
-    errors.arrivalTime = BASIC_VALIDATION_RULES.required;
-  }
-
-  if (!values.finishTime) {
-    errors.finishTime = BASIC_VALIDATION_RULES.required;
-  }
-
-  if (
-    values.arrivalTime &&
-    values.finishTime &&
-    values.arrivalTime >= values.finishTime
-  ) {
-    errors.finishTime = "Jam selesai harus lebih besar dari jam datang";
-  }
-
   if (!values.purpose) {
     errors.purpose = BASIC_VALIDATION_RULES.required;
   } else if (!PURPOSE_VALUES.has(values.purpose)) {
     errors.purpose = "Keperluan layanan BK tidak valid";
   }
 
-  if (!values.serviceType) {
-    errors.serviceType = BASIC_VALIDATION_RULES.required;
-  } else if (!SERVICE_TYPE_VALUES.has(values.serviceType)) {
-    errors.serviceType = "Jenis layanan BK tidak valid";
-  }
-
-  if (!values.counselorName) {
-    errors.counselorName = BASIC_VALIDATION_RULES.required;
-  }
+  if (!values.description) errors.description = BASIC_VALIDATION_RULES.required;
+  if (!values.result) errors.result = BASIC_VALIDATION_RULES.required;
+  if (!values.followUp) errors.followUp = BASIC_VALIDATION_RULES.required;
+  if (!values.signature) errors.signature = BASIC_VALIDATION_RULES.required;
 
   return errors;
 }

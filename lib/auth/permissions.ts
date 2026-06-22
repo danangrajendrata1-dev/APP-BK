@@ -1,4 +1,4 @@
-export type AppRole = "admin" | "guru_bk" | "siswa";
+export type AppRole = "admin" | "guru_bk" | "kepala_sekolah" | "siswa";
 export type AppNavItem = {
   label: string;
   href: string;
@@ -62,6 +62,10 @@ export function canAccessPath(role: AppRole, pathname: string) {
     return true;
   }
 
+  if (role === "kepala_sekolah") {
+    return pathname === "/dashboard" || pathname.startsWith("/dashboard/") || pathname === "/reports" || pathname.startsWith("/reports/");
+  }
+
   return (
     pathname === STUDENT_HOME_ROUTE ||
     pathname.startsWith(`${STUDENT_HOME_ROUTE}/`)
@@ -69,11 +73,20 @@ export function canAccessPath(role: AppRole, pathname: string) {
 }
 
 export function getDefaultRouteForRole(role: AppRole) {
-  return role === "siswa" ? STUDENT_HOME_ROUTE : BK_HOME_ROUTE;
+  if (role === "siswa") {
+    return STUDENT_HOME_ROUTE;
+  }
+
+  return BK_HOME_ROUTE;
 }
 
 export function normalizeRole(value: string | null | undefined): AppRole {
-  if (value === "admin" || value === "guru_bk" || value === "siswa") {
+  if (
+    value === "admin" ||
+    value === "guru_bk" ||
+    value === "kepala_sekolah" ||
+    value === "siswa"
+  ) {
     return value;
   }
 
@@ -83,6 +96,12 @@ export function normalizeRole(value: string | null | undefined): AppRole {
 export function getVisibleMenuItems(role: AppRole) {
   if (role === "siswa") {
     return APP_NAV_ITEMS.filter((item) => item.href === STUDENT_HOME_ROUTE);
+  }
+
+  if (role === "kepala_sekolah") {
+    return APP_NAV_ITEMS.filter(
+      (item) => item.href === "/dashboard" || item.href === "/reports",
+    );
   }
 
   return APP_NAV_ITEMS;

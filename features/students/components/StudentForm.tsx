@@ -71,12 +71,15 @@ export function StudentForm({
           error={state.errors.fullName}
           placeholder="Masukkan nama lengkap siswa"
         />
-        <Input
+        <Select
           name="gender"
-          label="Jenis Kelamin"
+          label="L / P"
+          options={[
+            { label: "Laki-laki", value: "Laki-laki" },
+            { label: "Perempuan", value: "Perempuan" },
+          ]}
           defaultValue={values.gender}
           error={state.errors.gender}
-          placeholder="Contoh: Laki-laki"
         />
         <Input
           name="className"
@@ -84,13 +87,6 @@ export function StudentForm({
           defaultValue={values.className}
           error={state.errors.className}
           placeholder="Contoh: X-TKJ-1"
-        />
-        <Input
-          name="major"
-          label="Jurusan"
-          defaultValue={values.major}
-          error={state.errors.major}
-          placeholder="Contoh: Teknik Komputer dan Jaringan"
         />
         <Input
           name="birthPlaceDate"
@@ -113,16 +109,9 @@ export function StudentForm({
           error={state.errors.parentName}
           placeholder="Masukkan nama orang tua atau wali"
         />
-        <Input
-          name="parentPhone"
-          label="No HP Orang Tua"
-          defaultValue={values.parentPhone}
-          error={state.errors.parentPhone}
-          placeholder="Masukkan nomor HP orang tua atau wali"
-        />
         <Select
           name="status"
-          label="Status Siswa"
+          label="Status"
           options={[...STUDENT_STATUS_OPTIONS]}
           defaultValue={values.status}
           error={state.errors.status}

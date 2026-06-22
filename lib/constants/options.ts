@@ -11,11 +11,9 @@ export const STUDENT_STATUS_OPTIONS = [
 ] as const satisfies readonly SelectOption[];
 
 export const SCHOOL_ATTENDANCE_STATUS_OPTIONS = [
-  { label: "Hadir", value: "Hadir" },
-  { label: "Izin", value: "Izin" },
-  { label: "Sakit", value: "Sakit" },
-  { label: "Alfa", value: "Alfa" },
-  { label: "Terlambat", value: "Terlambat" },
+  { label: "S", value: "S" },
+  { label: "I", value: "I" },
+  { label: "A", value: "A" },
 ] as const satisfies readonly SelectOption[];
 
 export const BK_SERVICE_PURPOSE_OPTIONS = [
@@ -110,5 +108,6 @@ export const ASSESSMENT_TYPE_OPTIONS = [
 export const ROLE_OPTIONS = [
   { label: "Admin", value: "admin" },
   { label: "Guru BK", value: "guru_bk" },
+  { label: "Kepala Sekolah", value: "kepala_sekolah" },
   { label: "Siswa", value: "siswa" },
 ] as const satisfies readonly SelectOption[];

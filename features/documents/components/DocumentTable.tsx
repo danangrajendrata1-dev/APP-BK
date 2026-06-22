@@ -11,16 +11,8 @@ function createPageHref(page: number) {
 }
 
 function getDocumentLabel(item: DocumentListResult["items"][number]) {
-  if (item.documentType && item.letterNumber) {
-    return `${item.documentType} - ${item.letterNumber}`;
-  }
-
-  if (item.documentType) {
-    return item.documentType;
-  }
-
-  if (item.letterNumber) {
-    return item.letterNumber;
+  if (item.title) {
+    return item.title;
   }
 
   return "Dokumen tanpa judul";
@@ -56,7 +48,7 @@ export function DocumentTable({ result }: Props) {
           <thead>
             <tr>
               <th className="border border-slate-300 bg-slate-50 px-2 py-2 text-left font-semibold uppercase tracking-normal text-slate-900">
-                Surat dan Dokumen
+                Surat &amp; Dokumen
               </th>
               <th className="border border-slate-300 bg-slate-50 px-2 py-2 text-left font-semibold uppercase tracking-normal text-slate-900">
                 Deskripsi / Preview Isi

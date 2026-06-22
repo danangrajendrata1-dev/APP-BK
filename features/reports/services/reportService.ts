@@ -162,7 +162,7 @@ export async function getReportsData(filters: ReportsFilters): Promise<ReportsDa
   const supabase = await createSupabaseServerClient();
   const dateRange = getDateRange(filters);
   const classPattern = filters.className ? `%${filters.className}%` : null;
-  const parentCallPattern = "%Panggilan Orang Tua%";
+  const parentCallPattern: string | null = null;
   const counselingMonthPeriods = getMonthPeriodsFromFilters(filters);
   const applyClassFilter = <T,>(query: T) =>
     classPattern && "ilike" in (query as object)
@@ -239,8 +239,10 @@ export async function getReportsData(filters: ReportsFilters): Promise<ReportsDa
     .from("v_bk_documents_with_relations" as never)
     .select("document_date, student_name, class_name, document_type, letter_number, description");
   documentsQuery = applyClassFilter(applyDateFilter(documentsQuery, "document_date"));
+  if (parentCallPattern) {
+    documentsQuery = documentsQuery.ilike("document_type", parentCallPattern);
+  }
   documentsQuery = documentsQuery
-    .ilike("document_type", parentCallPattern)
     .order("document_date", { ascending: false })
     .limit(REPORT_SECTION_ROW_LIMIT);
 
@@ -336,7 +338,10 @@ export async function getReportsData(filters: ReportsFilters): Promise<ReportsDa
     .select("id", { count: "exact", head: true });
   parentCallCountQuery = applyClassFilter(
     applyDateFilter(parentCallCountQuery, "document_date"),
-  ).ilike("document_type", parentCallPattern);
+  );
+  if (parentCallPattern) {
+    parentCallCountQuery = parentCallCountQuery.ilike("document_type", parentCallPattern);
+  }
 
   let homeVisitsCountQuery = supabase
     .from("v_home_visits_with_relations" as never)
@@ -425,7 +430,7 @@ export async function getReportsData(filters: ReportsFilters): Promise<ReportsDa
   if (counselingCountResult.error) logSupabaseError("[Reports] v_counseling_records_with_relations count", counselingCountResult.error, { filters, dateRange });
   if (studentAssistanceCountResult.error) logSupabaseError("[Reports] student_assistances count", studentAssistanceCountResult.error, { filters });
   if (classAssistanceCountResult.error) logSupabaseError("[Reports] class_assistances count", classAssistanceCountResult.error, { filters });
-  if (parentCallCountResult.error) logSupabaseError("[Reports] v_bk_documents_with_relations parent-call count", parentCallCountResult.error, { filters, dateRange });
+  if (parentCallCountResult.error) logSupabaseError("[Reports] v_bk_documents_with_relations count", parentCallCountResult.error, { filters, dateRange });
   if (homeVisitsCountResult.error) logSupabaseError("[Reports] v_home_visits_with_relations count", homeVisitsCountResult.error, { filters, dateRange });
   attendanceStatusCountResults.forEach((result, index) => {
     if (result.error) {
@@ -593,12 +598,7 @@ export async function getReportsData(filters: ReportsFilters): Promise<ReportsDa
       Tanggal: row.counseling_date,
       "Nama Siswa": row.student_name,
       Kelas: row.class_name,
-      "Pertemuan Ke-": row.meeting_number ?? "-",
-      Media: row.media,
-      "Jenis Konseling": row.counseling_type,
-      Topik: normalize(row.topic),
-      "Hasil Konseling": normalize(row.counseling_result),
-      "Tindak Lanjut": normalize(row.follow_up),
+      "Kode Pelanggaran": normalize(row.topic),
       Keterangan: normalize(row.description),
     }));
 
@@ -664,9 +664,9 @@ export async function getReportsData(filters: ReportsFilters): Promise<ReportsDa
       Semester: filters.semester ? `Semester ${filters.semester}` : "Semua Semester",
       Tahun: filters.year ?? "Semua Tahun",
       "Kehadiran Sekolah": attendanceTotal,
-      Konseling: counselingTotal,
+      Pelanggaran: counselingTotal,
       Pendampingan: studentAssistanceTotal + classAssistanceTotal,
-      "Pemanggilan Orang Tua": parentCallTotal,
+      "Surat & Dokumen": parentCallTotal,
       "Home Visit": homeVisitTotal,
     },
   ];
@@ -675,9 +675,9 @@ export async function getReportsData(filters: ReportsFilters): Promise<ReportsDa
     {
       Tahun: filters.year ?? "Semua Tahun",
       "Kehadiran Sekolah": attendanceTotal,
-      Konseling: counselingTotal,
+      Pelanggaran: counselingTotal,
       Pendampingan: studentAssistanceTotal + classAssistanceTotal,
-      "Pemanggilan Orang Tua": parentCallTotal,
+      "Surat & Dokumen": parentCallTotal,
       "Home Visit": homeVisitTotal,
     },
   ];
@@ -728,14 +728,14 @@ export async function getReportsData(filters: ReportsFilters): Promise<ReportsDa
   const reportSections: ReportSection[] = [
     {
       title: "Rekap Kehadiran Sekolah",
-      description: `Data kehadiran siswa berdasarkan presensi sekolah. Menampilkan maksimal ${REPORT_SECTION_ROW_LIMIT} baris terbaru.`,
+      description: `Data kehadiran siswa berdasarkan daftar hadir sekolah. Menampilkan maksimal ${REPORT_SECTION_ROW_LIMIT} baris terbaru.`,
       columns: ["Tanggal", "Nama Siswa", "Kelas", "Status", "Keterangan"],
       rows: buildTableRows(attendanceRows),
     },
     {
-      title: "Rekap Konseling",
-      description: `Ringkasan catatan layanan konseling. Menampilkan maksimal ${REPORT_SECTION_ROW_LIMIT} baris terbaru.`,
-      columns: ["Tanggal", "Nama Siswa", "Kelas", "Pertemuan Ke-", "Media", "Jenis Konseling", "Topik", "Hasil Konseling", "Tindak Lanjut", "Keterangan"],
+      title: "Rekap Pelanggaran",
+      description: `Ringkasan catatan pelanggaran siswa. Menampilkan maksimal ${REPORT_SECTION_ROW_LIMIT} baris terbaru.`,
+      columns: ["Tanggal", "Nama Siswa", "Kelas", "Kode Pelanggaran", "Keterangan"],
       rows: buildTableRows(counselingRows),
     },
     {
@@ -745,8 +745,8 @@ export async function getReportsData(filters: ReportsFilters): Promise<ReportsDa
       rows: buildTableRows(studentAssistanceRows),
     },
     {
-      title: "Rekap Pemanggilan Orang Tua",
-      description: `Dokumen terkait pemanggilan orang tua. Menampilkan maksimal ${REPORT_SECTION_ROW_LIMIT} baris terbaru.`,
+      title: "Rekap Surat & Dokumen",
+      description: `Daftar surat dan dokumen BK. Menampilkan maksimal ${REPORT_SECTION_ROW_LIMIT} baris terbaru.`,
       columns: ["Tanggal", "Nomor Surat", "Nama Siswa", "Kelas", "Jenis Surat", "Keterangan"],
       rows: buildTableRows(parentCallRows),
     },
@@ -765,13 +765,13 @@ export async function getReportsData(filters: ReportsFilters): Promise<ReportsDa
     {
       title: "Rekap Per Semester",
       description: "Ringkasan data berdasarkan semester.",
-      columns: ["Semester", "Tahun", "Kehadiran Sekolah", "Konseling", "Pendampingan", "Pemanggilan Orang Tua", "Home Visit"],
+      columns: ["Semester", "Tahun", "Kehadiran Sekolah", "Pelanggaran", "Pendampingan", "Surat & Dokumen", "Home Visit"],
       rows: buildTableRows(semesterRows),
     },
     {
       title: "Rekap Per Tahun",
       description: "Ringkasan data berdasarkan tahun.",
-      columns: ["Tahun", "Kehadiran Sekolah", "Konseling", "Pendampingan", "Pemanggilan Orang Tua", "Home Visit"],
+      columns: ["Tahun", "Kehadiran Sekolah", "Pelanggaran", "Pendampingan", "Surat & Dokumen", "Home Visit"],
       rows: buildTableRows(yearlyRows),
     },
   ];

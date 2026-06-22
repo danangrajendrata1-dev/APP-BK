@@ -18,7 +18,7 @@ const DEFAULT_PAGE = 1;
 const DEFAULT_PAGE_SIZE = 20;
 const DOCUMENT_BUCKET = "document-files";
 const DOCUMENT_LIST_COLUMNS =
-  "id, letter_number, document_date, student_id, student_name, class_name, document_type, file_url, description";
+  "id, title, file_path, file_name, mime_type, file_size, description, created_at, updated_at";
 const DOCUMENT_ALLOWED_TYPES = [
   "application/pdf",
   "application/msword",
@@ -32,14 +32,14 @@ type DocumentRow = Database["public"]["Tables"]["documents"]["Row"];
 type DocumentListRow = Pick<
   DocumentRow,
   | "id"
-  | "letter_number"
-  | "document_date"
-  | "student_id"
-  | "student_name"
-  | "class_name"
-  | "document_type"
-  | "file_url"
+  | "title"
+  | "file_path"
+  | "file_name"
+  | "mime_type"
+  | "file_size"
   | "description"
+  | "created_at"
+  | "updated_at"
 >;
 type DocumentInsert = Database["public"]["Tables"]["documents"]["Insert"];
 
@@ -48,18 +48,18 @@ function normalizeText(value: string | null | undefined) {
 }
 
 async function mapDocument(row: DocumentListRow): Promise<DocumentItem> {
-  const filePath = "";
-  const fileUrl = normalizeText(row.file_url);
+  const filePath = normalizeText(row.file_path);
+  const fileUrl = filePath
+    ? ((await createSignedFileUrl(DOCUMENT_BUCKET, filePath)) ?? "")
+    : "";
 
   return {
     id: row.id,
-    letterNumber: row.letter_number,
-    documentDate: row.document_date,
-    studentId: row.student_id ?? "",
-    studentName: row.student_name,
-    className: normalizeText(row.class_name),
-    documentType: row.document_type,
+    title: row.title,
     filePath,
+    fileName: normalizeText(row.file_name),
+    mimeType: normalizeText(row.mime_type),
+    fileSize: row.file_size ?? 0,
     fileUrl,
     description: normalizeText(row.description),
   };
@@ -68,18 +68,15 @@ async function mapDocument(row: DocumentListRow): Promise<DocumentItem> {
 function mapDocumentPayload(
   values: DocumentFormValues,
   filePath: string,
-  fileUrl: string,
+  file: File,
 ): DocumentInsert {
   return {
-    letter_number: values.letterNumber,
-    document_date: values.documentDate,
-    student_id: values.studentId || null,
-    student_name: values.studentName,
-    class_name: values.className,
-    document_type: values.documentType,
-    file_path: filePath,
-    file_url: fileUrl || null,
+    title: values.title,
     description: values.description || null,
+    file_path: filePath,
+    file_name: file.name,
+    mime_type: file.type,
+    file_size: file.size,
   };
 }
 
@@ -94,15 +91,12 @@ export async function getDocuments(
   const to = from + pageSize - 1;
 
   let query = supabase
-    .from("v_bk_documents_with_relations" as never)
+    .from("documents")
     .select(DOCUMENT_LIST_COLUMNS, { count: "exact" })
-    .order("document_date", { ascending: false })
+    .order("created_at", { ascending: false })
     .range(from, to);
 
-  if (filters.documentDate) query = query.eq("document_date", filters.documentDate);
-  if (filters.documentType) query = query.eq("document_type", filters.documentType);
-  if (filters.studentName) query = query.ilike("student_name", `%${filters.studentName}%`);
-  if (filters.className) query = query.ilike("class_name", `%${filters.className}%`);
+  if (filters.title) query = query.ilike("title", `%${filters.title}%`);
 
   const { data, count, error } = await query;
   if (error) {
@@ -137,27 +131,25 @@ export async function createDocument(
 ): Promise<DocumentItem> {
   validateUploadedFile(file, {
     allowedMimeTypes: [...DOCUMENT_ALLOWED_TYPES],
+    maxSizeBytes: 10 * 1024 * 1024,
     requiredMessage: "File lampiran wajib diunggah",
   });
 
   const filePath = await uploadPrivateFile({
     bucket: DOCUMENT_BUCKET,
     file,
-    folder: `documents/${values.documentDate || "undated"}`,
+    folder: `documents/${Date.now()}`,
   });
 
-  const fileUrl = (await createSignedFileUrl(DOCUMENT_BUCKET, filePath)) ?? "";
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("documents")
-    .insert(mapDocumentPayload(values, filePath, fileUrl) as never)
-    .select("*")
+    .insert(mapDocumentPayload(values, filePath, file) as never)
+    .select(DOCUMENT_LIST_COLUMNS)
     .single();
 
   if (error) {
     logSupabaseError("[Documents] createDocument", error, {
-      studentId: values.studentId,
-      documentDate: values.documentDate,
       filePath,
     });
     throw new Error(buildSupabaseErrorMessage("Gagal menyimpan surat dan dokumen", error));

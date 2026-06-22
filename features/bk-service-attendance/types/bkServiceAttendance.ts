@@ -1,7 +1,6 @@
 import type {
   BkServiceAttendanceFormValues,
   BkServicePurpose,
-  BkServiceType,
   PaginationMeta,
   TableQueryParams,
 } from "@/types/common";
@@ -12,12 +11,11 @@ export type BkServiceAttendanceItem = {
   studentId: string;
   studentName: string;
   className: string;
-  arrivalTime: string;
-  finishTime: string;
   purpose: BkServicePurpose;
-  serviceType: BkServiceType;
-  counselorName: string;
   description: string;
+  result: string;
+  followUp: string;
+  signature: string;
   createdAt: string;
   updatedAt: string;
 };
@@ -27,8 +25,6 @@ export type BkServiceAttendanceFilters = {
   year?: number;
   className?: string;
   purpose?: BkServicePurpose;
-  serviceType?: BkServiceType;
-  counselorName?: string;
 };
 
 export type BkServiceAttendanceListQuery =

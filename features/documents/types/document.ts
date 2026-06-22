@@ -1,28 +1,22 @@
 import type {
   DocumentFormValues,
-  DocumentType,
   PaginationMeta,
   TableQueryParams,
 } from "@/types/common";
 
 export type DocumentItem = {
   id: string;
-  letterNumber: string;
-  documentDate: string;
-  studentId: string;
-  studentName: string;
-  className: string;
-  documentType: DocumentType;
+  title: string;
   filePath: string;
+  fileName: string;
+  mimeType: string;
+  fileSize: number;
   fileUrl: string;
   description: string;
 };
 
 export type DocumentFilters = {
-  documentDate?: string;
-  documentType?: DocumentType;
-  studentName?: string;
-  className?: string;
+  title?: string;
 };
 
 export type DocumentListQuery = TableQueryParams<DocumentFilters>;

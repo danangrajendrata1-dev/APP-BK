@@ -16,60 +16,82 @@ type SchoolAttendanceRow = Database["public"]["Tables"]["school_attendance"]["Ro
 type SchoolAttendanceListRow = Pick<
   SchoolAttendanceRow,
   | "id"
+  | "attendance_year"
+  | "attendance_month"
+  | "attendance_day"
   | "attendance_date"
   | "student_id"
   | "student_name"
   | "class_name"
-  | "status"
+  | "attendance_status"
   | "description"
 >;
 type SchoolAttendanceInsert =
   Database["public"]["Tables"]["school_attendance"]["Insert"];
 type StudentReferenceRow = Pick<
-  Database["public"]["Views"]["v_students_with_relations"]["Row"],
-  "id" | "full_name" | "class_name" | "parent_name" | "address"
+  Database["public"]["Tables"]["students"]["Row"],
+  "id" | "full_name" | "class_name"
 >;
-
-function normalizeText(value: string | null | undefined) {
-  return value ?? "";
-}
-
-function normalizeDate(value: string) {
-  return new Date(`${value}T00:00:00`);
-}
-
-function getMonthRange(month: number, year: number) {
-  const start = `${year}-${String(month).padStart(2, "0")}-01`;
-  const end = new Date(year, month, 0).toISOString().slice(0, 10);
-  return { start, end };
-}
 
 function createEmptyDays() {
   return Array.from({ length: DAYS_IN_MONTH }, () => "");
 }
 
-function mapStatusToMark(status: SchoolAttendanceRow["status"]) {
-  switch (status) {
-    case "Sakit":
+type SchoolAttendanceStatusValue = SchoolAttendanceRow["attendance_status"];
+
+function normalizeAttendanceStatus(status: string): SchoolAttendanceStatusValue {
+  const normalized = status.trim().toLowerCase();
+
+  if (normalized === "s" || normalized === "sakit") {
+    return "S";
+  }
+
+  if (normalized === "i" || normalized === "izin") {
+    return "I";
+  }
+
+  if (normalized === "a" || normalized === "alfa") {
+    return "A";
+  }
+
+  return status as SchoolAttendanceStatusValue;
+}
+
+function mapStatusToMark(status: SchoolAttendanceRow["attendance_status"] | string) {
+  switch (normalizeAttendanceStatus(status)) {
+    case "S":
       return "S";
-    case "Izin":
+    case "I":
       return "I";
-    case "Alfa":
+    case "A":
       return "A";
     default:
       return "";
   }
 }
 
+function buildAttendanceDate(values: SchoolAttendanceFormValues) {
+  const year = Number(values.year);
+  const month = Number(values.month);
+  const day = Number(values.day);
+  const monthPart = String(month).padStart(2, "0");
+  const dayPart = String(day).padStart(2, "0");
+
+  return `${year}-${monthPart}-${dayPart}`;
+}
+
 function mapSchoolAttendancePayload(
   values: SchoolAttendanceFormValues,
 ): SchoolAttendanceInsert {
   return {
-    attendance_date: values.attendanceDate,
-    student_id: values.studentId || null,
+    attendance_year: Number(values.year),
+    attendance_month: Number(values.month),
+    attendance_day: Number(values.day),
+    attendance_date: buildAttendanceDate(values),
+    student_id: values.studentId || "",
     student_name: values.studentName,
     class_name: values.className,
-    status: values.status,
+    attendance_status: normalizeAttendanceStatus(values.status),
     description: values.description || null,
   };
 }
@@ -79,8 +101,6 @@ function mapStudentReference(row: StudentReferenceRow): StudentReference {
     id: row.id,
     fullName: row.full_name,
     className: row.class_name,
-    parentName: normalizeText(row.parent_name),
-    address: normalizeText(row.address),
   };
 }
 
@@ -97,34 +117,31 @@ function mapGridRow(
   let description = "";
 
   for (const row of attendanceRows) {
-    const attendanceDate = normalizeDate(row.attendance_date);
-    if (attendanceDate.getMonth() + 1 !== month || attendanceDate.getFullYear() !== year) {
+    if (row.attendance_year !== year || row.attendance_month !== month) {
       continue;
     }
 
-    const rowStudentKey = row.student_id ?? row.student_name;
-    if (row.student_id && row.student_id !== student.id) {
-      continue;
-    }
-    if (!row.student_id && rowStudentKey !== student.fullName) {
+    if (row.student_id !== student.id) {
       continue;
     }
 
-    const dayIndex = attendanceDate.getDate() - 1;
+    const dayIndex = row.attendance_day - 1;
     if (dayIndex < 0 || dayIndex >= DAYS_IN_MONTH) {
       continue;
     }
 
-    const mark = mapStatusToMark(row.status);
+    const mark = mapStatusToMark(row.attendance_status);
     if (mark) {
       days[dayIndex] = mark;
     }
 
-    if (row.status === "Sakit") {
+    const normalizedStatus = normalizeAttendanceStatus(row.attendance_status);
+
+    if (normalizedStatus === "S") {
       totalS += 1;
-    } else if (row.status === "Izin") {
+    } else if (normalizedStatus === "I") {
       totalI += 1;
-    } else if (row.status === "Alfa") {
+    } else if (normalizedStatus === "A") {
       totalA += 1;
     }
 
@@ -149,8 +166,8 @@ function mapGridRow(
 export async function getStudentReferences(): Promise<StudentReference[]> {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
-    .from("v_students_with_relations")
-    .select("id, full_name, class_name, parent_name, address")
+    .from("students")
+    .select("id, full_name, class_name")
     .order("full_name", { ascending: true });
 
   if (error) {
@@ -181,21 +198,19 @@ export async function getSchoolAttendanceSheet(
     };
   }
 
-  const { start, end } = getMonthRange(month, year);
-
   const [studentsResult, attendanceResult] = await Promise.all([
     supabase
-      .from("v_students_with_relations")
-      .select("id, full_name, class_name, parent_name, address")
+      .from("students")
+      .select("id, full_name, class_name")
       .eq("class_name", className)
       .order("full_name", { ascending: true }),
     supabase
       .from("school_attendance")
-      .select("id, attendance_date, student_id, student_name, class_name, status, description")
+      .select("id, attendance_year, attendance_month, attendance_day, attendance_date, student_id, student_name, class_name, attendance_status, description")
       .eq("class_name", className)
-      .gte("attendance_date", start)
-      .lte("attendance_date", end)
-      .order("attendance_date", { ascending: true }),
+      .eq("attendance_year", year)
+      .eq("attendance_month", month)
+      .order("attendance_day", { ascending: true }),
   ]);
 
   if (studentsResult.error) {
@@ -205,7 +220,7 @@ export async function getSchoolAttendanceSheet(
       year,
     });
     throw new Error(
-      buildSupabaseErrorMessage("Gagal memuat daftar siswa untuk presensi sekolah", studentsResult.error),
+      buildSupabaseErrorMessage("Gagal memuat daftar siswa untuk daftar hadir sekolah", studentsResult.error),
     );
   }
 
@@ -216,7 +231,7 @@ export async function getSchoolAttendanceSheet(
       year,
     });
     throw new Error(
-      buildSupabaseErrorMessage("Gagal memuat data presensi sekolah", attendanceResult.error),
+      buildSupabaseErrorMessage("Gagal memuat data daftar hadir sekolah", attendanceResult.error),
     );
   }
 
@@ -246,16 +261,16 @@ export async function createSchoolAttendance(
   const { error } = await supabase
     .from("school_attendance")
     .insert(payload as never)
-    .select("*")
+    .select("id, attendance_year, attendance_month, attendance_day, attendance_date, student_id, student_name, class_name, attendance_status, description")
     .single();
 
   if (error) {
     logSupabaseError("[SchoolAttendance] createSchoolAttendance", error, {
       studentId: values.studentId,
-      attendanceDate: values.attendanceDate,
+      attendanceDate: payload.attendance_date,
     });
     throw new Error(
-      buildSupabaseErrorMessage("Gagal menyimpan presensi sekolah", error),
+      buildSupabaseErrorMessage("Gagal menyimpan daftar hadir sekolah", error),
     );
   }
 
@@ -264,10 +279,20 @@ export async function createSchoolAttendance(
     studentId: payload.student_id ?? "",
     studentName: payload.student_name,
     className: payload.class_name,
-    days: createEmptyDays(),
-    totalS: payload.status === "Sakit" ? 1 : 0,
-    totalI: payload.status === "Izin" ? 1 : 0,
-    totalA: payload.status === "Alfa" ? 1 : 0,
+    days: (() => {
+      const days = createEmptyDays();
+      const dayIndex = Number(payload.attendance_day) - 1;
+      const mark = mapStatusToMark(payload.attendance_status);
+
+      if (dayIndex >= 0 && dayIndex < DAYS_IN_MONTH) {
+        days[dayIndex] = mark;
+      }
+
+      return days;
+    })(),
+    totalS: normalizeAttendanceStatus(payload.attendance_status) === "S" ? 1 : 0,
+    totalI: normalizeAttendanceStatus(payload.attendance_status) === "I" ? 1 : 0,
+    totalA: normalizeAttendanceStatus(payload.attendance_status) === "A" ? 1 : 0,
     description: payload.description ?? "",
   };
 }

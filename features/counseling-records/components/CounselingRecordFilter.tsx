@@ -12,7 +12,7 @@ export function CounselingRecordFilter({ filters }: Props) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Filter Catatan Konseling</CardTitle>
+        <CardTitle>Filter Catatan Pelanggaran</CardTitle>
         <CardDescription>Saring data berdasarkan bulan, tahun, kelas, media, dan jenis konseling.</CardDescription>
       </CardHeader>
       <CardContent>

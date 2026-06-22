@@ -29,12 +29,10 @@ function toFormValues(student: Awaited<ReturnType<typeof getStudentById>>): Stud
       fullName: "",
       gender: "",
       className: "",
-      major: "",
       birthPlaceDate: "",
       address: "",
       phone: "",
       parentName: "",
-      parentPhone: "",
       status: "Aktif",
     };
   }
@@ -44,12 +42,10 @@ function toFormValues(student: Awaited<ReturnType<typeof getStudentById>>): Stud
     fullName: student.fullName,
     gender: student.gender,
     className: student.className,
-    major: student.major,
     birthPlaceDate: student.birthPlaceDate,
     address: student.address,
     phone: student.phone,
     parentName: student.parentName,
-    parentPhone: student.parentPhone,
     status: student.status,
   };
 }

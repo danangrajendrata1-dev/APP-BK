@@ -11,22 +11,17 @@ export type Student = {
   fullName: string;
   gender: string;
   className: string;
-  major: string;
   birthPlaceDate: string;
   address: string;
   phone: string;
   parentName: string;
-  parentPhone: string;
   status: StudentStatus;
   createdAt: string;
   updatedAt: string;
 };
 
 export type StudentFilters = {
-  fullName?: string;
-  nisn?: string;
   className?: string;
-  major?: string;
   status?: StudentStatus;
 };
 

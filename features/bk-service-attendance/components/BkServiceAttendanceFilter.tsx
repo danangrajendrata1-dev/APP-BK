@@ -10,7 +10,6 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import {
   BK_SERVICE_PURPOSE_OPTIONS,
-  BK_SERVICE_TYPE_OPTIONS,
 } from "@/lib/constants/options";
 
 import type { BkServiceAttendanceFilters } from "@/features/bk-service-attendance/types/bkServiceAttendance";
@@ -30,13 +29,13 @@ export function BkServiceAttendanceFilter({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Filter Presensi Layanan BK</CardTitle>
+        <CardTitle>Filter Daftar Hadir dan Catatan Kunjungan BK</CardTitle>
         <CardDescription>
-          Saring data berdasarkan bulan, tahun, kelas, keperluan, jenis layanan, dan guru BK.
+          Saring data berdasarkan bulan, tahun, kelas, dan keperluan.
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
+        <form className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <Select
             name="month"
             label="Bulan"
@@ -66,21 +65,8 @@ export function BkServiceAttendanceFilter({
             defaultValue={filters.purpose}
             placeholder="Semua keperluan"
           />
-          <Select
-            name="serviceType"
-            label="Jenis Layanan"
-            options={[...BK_SERVICE_TYPE_OPTIONS]}
-            defaultValue={filters.serviceType}
-            placeholder="Semua jenis layanan"
-          />
-          <Input
-            name="counselorName"
-            label="Guru BK"
-            defaultValue={filters.counselorName}
-            placeholder="Cari guru BK"
-          />
 
-          <div className="flex flex-col gap-3 md:col-span-2 xl:col-span-6 xl:flex-row xl:justify-end">
+          <div className="flex flex-col gap-3 md:col-span-2 xl:col-span-4 xl:flex-row xl:justify-end">
             <Button type="submit">Terapkan Filter</Button>
             <Button href="/bk-service-attendance" variant="outline">
               Reset Filter

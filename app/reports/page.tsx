@@ -75,7 +75,7 @@ export default async function ReportsPage({ searchParams }: PageProps) {
           </Card>
 
           <div className="grid gap-6 xl:grid-cols-2">
-            <ReportsChartCard title="Konseling Per Bulan" description="Grafik jumlah konseling per bulan." items={reports.charts.counselingPerMonth} />
+            <ReportsChartCard title="Pelanggaran Per Bulan" description="Grafik jumlah pelanggaran per bulan." items={reports.charts.counselingPerMonth} />
             <ReportsChartCard title="Siswa Terbanyak Menerima Layanan" description="Grafik siswa dengan akumulasi layanan BK terbanyak." items={reports.charts.studentsMostServed} />
             <ReportsChartCard title="Kehadiran Siswa" description="Grafik distribusi status kehadiran siswa." items={reports.charts.attendanceByStatus} />
             <ReportsChartCard title="Topik Pendampingan Terbanyak" description="Grafik topik atau kode pendampingan yang paling sering muncul." items={reports.charts.topAssistanceTopics} />

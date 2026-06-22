@@ -16,9 +16,9 @@ type Props = {
 export function ReportsSummaryGrid({ summary }: Props) {
   const items = [
     { label: "Rekap Kehadiran Sekolah", value: summary.attendanceRows },
-    { label: "Rekap Konseling", value: summary.counselingRows },
+    { label: "Rekap Pelanggaran", value: summary.counselingRows },
     { label: "Rekap Pendampingan", value: summary.assistanceRows },
-    { label: "Rekap Pemanggilan Orang Tua", value: summary.parentCallRows },
+    { label: "Rekap Surat & Dokumen", value: summary.parentCallRows },
     { label: "Rekap Home Visit", value: summary.homeVisitRows },
     { label: "Rekap Per Kelas", value: summary.classRows },
     { label: "Rekap Per Semester", value: summary.semesterRows },

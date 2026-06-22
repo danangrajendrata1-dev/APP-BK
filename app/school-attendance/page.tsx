@@ -1,12 +1,23 @@
+import { revalidatePath } from "next/cache";
+
 import { ErrorState } from "@/components/shared/ErrorState";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { SchoolAttendanceForm } from "@/features/school-attendance/components/SchoolAttendanceForm";
 import { SchoolAttendanceFilter } from "@/features/school-attendance/components/SchoolAttendanceFilter";
 import { SchoolAttendanceTable } from "@/features/school-attendance/components/SchoolAttendanceTable";
-import { getSchoolAttendanceSheet } from "@/features/school-attendance/services/schoolAttendanceService";
+import {
+  createSchoolAttendance,
+  getSchoolAttendanceSheet,
+} from "@/features/school-attendance/services/schoolAttendanceService";
+import {
+  EMPTY_SCHOOL_ATTENDANCE_FORM_VALUES,
+  createSchoolAttendanceFormState,
+  INITIAL_SCHOOL_ATTENDANCE_FORM_STATE,
+  parseSchoolAttendanceFormData,
+  validateSchoolAttendanceForm,
+} from "@/features/school-attendance/schemas/schoolAttendanceSchema";
 import { getStudentClassOptions } from "@/features/students/services/studentService";
-import type {
-  SchoolAttendanceFilters,
-} from "@/features/school-attendance/types/schoolAttendance";
+import type { SchoolAttendanceFilters, SchoolAttendanceFormState } from "@/features/school-attendance/types/schoolAttendance";
 
 type SchoolAttendancePageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -49,6 +60,46 @@ export default async function SchoolAttendancePage({
   let loadError = "";
   let result: Awaited<ReturnType<typeof getSchoolAttendanceSheet>> | null = null;
 
+  async function createSchoolAttendanceAction(
+    _state: SchoolAttendanceFormState,
+    formData: FormData,
+  ): Promise<SchoolAttendanceFormState> {
+    "use server";
+
+    const values = parseSchoolAttendanceFormData(formData);
+    const errors = validateSchoolAttendanceForm(values);
+
+    if (Object.keys(errors).length > 0) {
+      return createSchoolAttendanceFormState(
+        values,
+        errors,
+        "Periksa kembali field yang wajib diisi.",
+      );
+    }
+
+    try {
+      await createSchoolAttendance(values);
+      revalidatePath("/school-attendance");
+
+      return {
+        ...INITIAL_SCHOOL_ATTENDANCE_FORM_STATE,
+        message: "Daftar hadir berhasil disimpan.",
+        values: {
+          ...EMPTY_SCHOOL_ATTENDANCE_FORM_VALUES,
+          className: values.className,
+          month: values.month,
+          year: values.year,
+        },
+      };
+    } catch (error) {
+      return createSchoolAttendanceFormState(
+        values,
+        {},
+        error instanceof Error ? error.message : "Gagal menyimpan daftar hadir.",
+      );
+    }
+  }
+
   try {
     result = await getSchoolAttendanceSheet({
       className: selectedClass,
@@ -66,8 +117,23 @@ export default async function SchoolAttendancePage({
     <section className="space-y-6">
       <PageHeader
         title="Daftar Hadir Sekolah"
-        description="Rekap kehadiran siswa per kelas dalam format tabel bulanan."
+        description="Tambah data lewat form, lalu lihat rekap kehadiran siswa per kelas dalam format tabel bulanan."
       />
+      <details className="border border-slate-500 bg-white">
+        <summary className="cursor-pointer list-none border-b border-slate-500 px-4 py-3 text-sm font-semibold uppercase tracking-wide text-slate-900">
+          Tambah Daftar Hadir
+        </summary>
+        <div className="p-4">
+          <SchoolAttendanceForm
+            action={createSchoolAttendanceAction}
+            initialValues={{
+              className: selectedClass,
+              month: String(selectedMonth),
+              year: String(selectedYear),
+            }}
+          />
+        </div>
+      </details>
       {loadError ? (
         <ErrorState description={loadError} />
       ) : (

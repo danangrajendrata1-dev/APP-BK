@@ -1,6 +1,5 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { buildSupabaseErrorMessage, logSupabaseError } from "@/lib/supabase/error";
-import { getStudents } from "@/features/students/services/studentService";
 import type { CounselingRecordFormValues } from "@/types/common";
 import type { Database } from "@/types/database";
 
@@ -13,7 +12,6 @@ import type {
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_PAGE_SIZE = 20;
-const SHEET_PAGE_SIZE = 20;
 const DAYS_IN_MONTH = 31;
 const COUNSELING_RECORD_LIST_COLUMNS =
   "id, counseling_date, student_id, student_name, class_name, meeting_number, media, counseling_type, topic, counseling_result, follow_up, description, created_at, updated_at";
@@ -38,10 +36,11 @@ type CounselingListRow = Pick<
 >;
 type CounselingInsert =
   Database["public"]["Tables"]["counseling_records"]["Insert"];
-type CounselingSheetRow = Pick<
-  CounselingRow,
+type ViolationRecordRow = Database["public"]["Tables"]["violation_records"]["Row"];
+type ViolationSheetRow = Pick<
+  ViolationRecordRow,
   | "id"
-  | "counseling_date"
+  | "violation_date"
   | "student_id"
   | "student_name"
   | "class_name"
@@ -180,20 +179,60 @@ export async function createCounselingRecord(
 }
 
 export async function getCounselingRecordSheet(
-  params: { month?: number; year?: number; page?: number } = {},
+  _params: { month?: number; year?: number; page?: number } = {},
 ): Promise<CounselingRecordSheetResult> {
   const supabase = await createSupabaseServerClient();
-  const month = params.month ?? new Date().getMonth() + 1;
-  const year = params.year ?? new Date().getFullYear();
-  const page = Math.max(params.page ?? 1, 1);
+  const month = _params.month ?? new Date().getMonth() + 1;
+  const year = _params.year ?? new Date().getFullYear();
+  const monthStart = new Date(year, month - 1, 1);
+  const monthEnd = new Date(year, month, 0);
 
-  const studentsResult = await getStudents({
-    page,
-    pageSize: SHEET_PAGE_SIZE,
-    filters: {},
-  });
+  const [studentsResult, violationResult] = await Promise.all([
+    supabase
+      .from("students")
+      .select("id, full_name, class_name")
+      .order("class_name", { ascending: true })
+      .order("full_name", { ascending: true }),
+    supabase
+      .from("violation_records")
+      .select("id, violation_date, student_id, student_name, class_name, description")
+      .lte("violation_date", monthEnd.toISOString().slice(0, 10))
+      .gte("violation_date", `${year}-01-01`)
+      .order("violation_date", { ascending: true }),
+  ]);
 
-  if (!studentsResult.items.length) {
+  if (studentsResult.error) {
+    logSupabaseError("[CounselingRecords] getCounselingRecordSheet students", studentsResult.error, {
+      month,
+      year,
+    });
+    throw new Error(
+      buildSupabaseErrorMessage("Gagal memuat daftar siswa untuk catatan pelanggaran", studentsResult.error),
+    );
+  }
+
+  if (violationResult.error) {
+    logSupabaseError("[CounselingRecords] getCounselingRecordSheet violation_records", violationResult.error, {
+      month,
+      year,
+    });
+    throw new Error(
+      buildSupabaseErrorMessage("Gagal memuat catatan pelanggaran", violationResult.error),
+    );
+  }
+
+  const students = ((studentsResult.data ?? []) as Array<{
+    id: string;
+    full_name: string;
+    class_name: string;
+  }>).map((student) => ({
+    id: student.id,
+    studentId: student.id,
+    studentName: student.full_name,
+    className: student.class_name,
+  }));
+
+  if (!students.length) {
     return {
       items: [],
       month,
@@ -201,43 +240,19 @@ export async function getCounselingRecordSheet(
     };
   }
 
-  const studentIds = studentsResult.items.map((student) => student.id);
-  const { data, error } = await supabase
-    .from("counseling_records")
-    .select("id, counseling_date, student_id, student_name, class_name, description")
-    .in("student_id", studentIds)
-    .order("counseling_date", { ascending: true });
-
-  if (error) {
-    logSupabaseError("[CounselingRecords] getCounselingRecordSheet", error, {
-      month,
-      year,
-      page,
-    });
-    throw new Error(
-      buildSupabaseErrorMessage("Gagal memuat catatan pelanggaran", error),
-    );
-  }
-
-  const rows = (data ?? []) as CounselingSheetRow[];
-  const monthStart = new Date(year, month - 1, 1);
-  const monthEnd = new Date(year, month, 0);
-  const recordsByStudent = new Map<string, CounselingSheetRow[]>();
+  const rows = (violationResult.data ?? []) as ViolationSheetRow[];
+  const recordsByStudent = new Map<string, ViolationSheetRow[]>();
 
   for (const row of rows) {
-    const studentKey = row.student_id ?? "";
-    if (!studentKey) {
-      continue;
-    }
-
+    const studentKey = row.student_id;
     const existingRows = recordsByStudent.get(studentKey) ?? [];
     existingRows.push(row);
     recordsByStudent.set(studentKey, existingRows);
   }
 
   return {
-    items: studentsResult.items.map((student) => {
-      const studentRecords = recordsByStudent.get(student.id) ?? [];
+    items: students.map((student) => {
+      const studentRecords = recordsByStudent.get(student.studentId) ?? [];
       const days = createEmptyDays();
       let previousTotal = 0;
       let total = 0;
@@ -245,7 +260,7 @@ export async function getCounselingRecordSheet(
       const dayCounts = new Map<number, number>();
 
       for (const record of studentRecords) {
-        const recordDate = getDateValue(record.counseling_date);
+        const recordDate = getDateValue(record.violation_date);
         const normalizedDescription = record.description?.trim() ?? "";
 
         if (recordDate < monthStart) {
@@ -269,8 +284,8 @@ export async function getCounselingRecordSheet(
 
       return {
         id: student.id,
-        studentId: student.id,
-        studentName: student.fullName,
+        studentId: student.studentId,
+        studentName: student.studentName,
         className: student.className,
         previousTotal,
         days,

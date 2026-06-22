@@ -16,11 +16,11 @@ import type {
 const DEFAULT_PAGE = 1;
 const DEFAULT_PAGE_SIZE = 20;
 const STUDENT_LIST_PAGE_COLUMNS =
-  "id, nisn, full_name, gender, class_name, major, major_code, birth_place_date, address, phone, parent_name, status";
+  "id, nisn, full_name, gender, class_name, birth_place_date, address, phone, parent_name, status";
 const STUDENT_DETAIL_COLUMNS =
-  "id, nisn, full_name, gender, class_name, major, major_code, birth_place_date, address, phone, parent_name, parent_phone, status, created_at, updated_at";
+  "id, nisn, full_name, gender, class_name, birth_place_date, address, phone, parent_name, status, created_at, updated_at";
 
-type StudentRow = Database["public"]["Views"]["v_students_with_relations"]["Row"];
+type StudentRow = Database["public"]["Tables"]["students"]["Row"];
 type StudentListRow = Pick<
   StudentRow,
   | "id"
@@ -28,8 +28,6 @@ type StudentListRow = Pick<
   | "full_name"
   | "gender"
   | "class_name"
-  | "major"
-  | "major_code"
   | "birth_place_date"
   | "address"
   | "phone"
@@ -43,13 +41,10 @@ type StudentDetailRow = Pick<
   | "full_name"
   | "gender"
   | "class_name"
-  | "major"
-  | "major_code"
   | "birth_place_date"
   | "address"
   | "phone"
   | "parent_name"
-  | "parent_phone"
   | "status"
   | "created_at"
   | "updated_at"
@@ -77,12 +72,10 @@ function mapStudent(row: StudentListRow): Student {
     fullName: row.full_name,
     gender: normalizeGender(row.gender),
     className: row.class_name,
-    major: row.major,
     birthPlaceDate: normalizeText(row.birth_place_date),
     address: normalizeText(row.address),
     phone: normalizeText(row.phone),
     parentName: normalizeText(row.parent_name),
-    parentPhone: "",
     status: row.status,
     createdAt: "",
     updatedAt: "",
@@ -96,12 +89,10 @@ function mapStudentDetail(row: StudentDetailRow): Student {
     fullName: row.full_name,
     gender: row.gender,
     className: row.class_name,
-    major: row.major,
     birthPlaceDate: normalizeText(row.birth_place_date),
     address: normalizeText(row.address),
     phone: normalizeText(row.phone),
     parentName: normalizeText(row.parent_name),
-    parentPhone: normalizeText(row.parent_phone),
     status: row.status,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -114,12 +105,10 @@ function mapStudentPayload(values: StudentFormValues): StudentInsert {
     full_name: values.fullName,
     gender: values.gender,
     class_name: values.className,
-    major: values.major,
     birth_place_date: values.birthPlaceDate,
     address: values.address,
     phone: values.phone,
     parent_name: values.parentName,
-    parent_phone: values.parentPhone,
     status: values.status,
   };
 }
@@ -134,28 +123,25 @@ export async function getStudents(
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
 
+  if (!filters.className) {
+    return {
+      items: [],
+      filters,
+      pagination: {
+        page,
+        pageSize,
+        totalItems: 0,
+        totalPages: 1,
+      },
+    };
+  }
+
   let query = supabase
-    .from("v_students_with_relations")
+    .from("students")
     .select(STUDENT_LIST_PAGE_COLUMNS, { count: "exact" })
     .order("full_name", { ascending: true })
-    .range(from, to);
-
-  if (filters.fullName) {
-    query = query.ilike("full_name", `%${filters.fullName}%`);
-  }
-
-  if (filters.nisn) {
-    query = query.ilike("nisn", `%${filters.nisn}%`);
-  }
-
-  if (filters.className) {
-    query = query.ilike("class_name", `%${filters.className}%`);
-  }
-
-  if (filters.major) {
-    const majorPattern = `%${filters.major}%`;
-    query = query.or(`major.ilike.${majorPattern},major_code.ilike.${majorPattern}`);
-  }
+    .range(from, to)
+    .eq("class_name", filters.className);
 
   if (filters.status) {
     query = query.eq("status", filters.status);
@@ -208,7 +194,7 @@ export async function getStudentClassOptions(): Promise<string[]> {
 export async function getStudentById(id: string): Promise<Student | null> {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
-    .from("v_students_with_relations")
+    .from("students")
     .select(STUDENT_DETAIL_COLUMNS)
     .eq("id", id)
     .maybeSingle();
@@ -227,7 +213,7 @@ export async function createStudent(values: StudentFormValues): Promise<Student>
   const { data, error } = await supabase
     .from("students")
     .insert(payload as never)
-    .select("*")
+    .select(STUDENT_DETAIL_COLUMNS)
     .single();
 
   if (error) {
@@ -239,7 +225,7 @@ export async function createStudent(values: StudentFormValues): Promise<Student>
     throw new Error(buildSupabaseErrorMessage("Gagal menambahkan data siswa", error));
   }
 
-  return mapStudent(data as StudentListRow);
+  return mapStudentDetail(data as StudentDetailRow);
 }
 
 export async function updateStudent(
@@ -252,7 +238,7 @@ export async function updateStudent(
     .from("students")
     .update(payload as never)
     .eq("id", id)
-    .select("*")
+    .select(STUDENT_DETAIL_COLUMNS)
     .single();
 
   if (error) {
@@ -264,7 +250,7 @@ export async function updateStudent(
     throw new Error(buildSupabaseErrorMessage("Gagal memperbarui data siswa", error));
   }
 
-  return mapStudent(data as StudentListRow);
+  return mapStudentDetail(data as StudentDetailRow);
 }
 
 export async function deleteStudent(id: string): Promise<void> {

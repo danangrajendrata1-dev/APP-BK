@@ -11,6 +11,7 @@ type TopbarProps = {
 const ROLE_LABELS: Record<AppRole, string> = {
   admin: "Admin",
   guru_bk: "Guru BK",
+  kepala_sekolah: "Kepala Sekolah",
   siswa: "Siswa",
 };
 
