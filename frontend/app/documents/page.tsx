@@ -67,10 +67,10 @@ export default async function DocumentsPage({ searchParams }: PageProps) {
         description="Daftar surat dan dokumen BK yang sudah diunggah."
       />
       <details className="border border-slate-300 bg-white">
-        <summary className="cursor-pointer list-none px-3 py-2 text-sm font-medium text-slate-800">
+        <summary className="cursor-pointer list-none border-b border-slate-200 px-3 py-3 text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
           Import Surat / Dokumen
         </summary>
-        <div className="border-t border-slate-300 px-3 py-3">
+        <div className="px-3 py-3">
           <DocumentForm action={createDocumentAction} />
         </div>
       </details>

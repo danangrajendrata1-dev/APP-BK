@@ -6,14 +6,19 @@ type SchoolAttendanceTableProps = {
 
 const DAYS_IN_MONTH = 31;
 const PLACEHOLDER_ROWS = 8;
+const TOTAL_COLUMNS = 3 + DAYS_IN_MONTH + 4;
 
 function getVisibleRowCount(totalRows: number) {
   return Math.max(totalRows, PLACEHOLDER_ROWS);
 }
 
 export function SchoolAttendanceTable({ result }: SchoolAttendanceTableProps) {
-  const { items } = result;
+  const { filters, items } = result;
   const visibleRowCount = getVisibleRowCount(items.length);
+  const hasFilter = Boolean(filters.className && filters.month && filters.year);
+  const emptyMessage = hasFilter
+    ? "Belum ada data untuk filter ini."
+    : "Pilih kelas, bulan, dan tahun terlebih dahulu.";
 
   return (
     <section className="border border-slate-500 bg-white">
@@ -52,40 +57,51 @@ export function SchoolAttendanceTable({ result }: SchoolAttendanceTableProps) {
             </tr>
           </thead>
           <tbody>
-            {Array.from({ length: visibleRowCount }, (_, index) => {
-              const row = items[index];
+            {items.length ? (
+              Array.from({ length: visibleRowCount }, (_, index) => {
+                const row = items[index];
 
-              return (
-                <tr key={row?.id ?? `blank-${index}`} className="bg-white">
-                  <td className="h-8 border border-slate-500 px-2 py-1 text-center text-xs text-slate-900">
-                    {row ? index + 1 : ""}
-                  </td>
-                  <td className="h-8 border border-slate-500 px-3 py-1 text-xs uppercase text-slate-900">
-                    {row ? row.studentName.toUpperCase() : ""}
-                  </td>
-                  <td className="h-8 border border-slate-500 px-3 py-1 text-center text-xs text-slate-900">
-                    {row ? row.className : ""}
-                  </td>
-                  {Array.from({ length: DAYS_IN_MONTH }, (_, dayIndex) => (
-                    <td key={dayIndex + 1} className="h-8 border border-slate-500 px-1 py-1 text-center text-xs text-slate-900">
-                      {row?.days[dayIndex] ?? ""}
+                return (
+                  <tr key={row?.id ?? `blank-${index}`} className="bg-white">
+                    <td className="h-8 border border-slate-500 px-2 py-1 text-center text-xs text-slate-900">
+                      {row ? index + 1 : ""}
                     </td>
-                  ))}
-                  <td className="h-8 border border-slate-500 px-2 py-1 text-center text-xs text-slate-900">
-                    {row ? row.totalS : ""}
-                  </td>
-                  <td className="h-8 border border-slate-500 px-2 py-1 text-center text-xs text-slate-900">
-                    {row ? row.totalI : ""}
-                  </td>
-                  <td className="h-8 border border-slate-500 px-2 py-1 text-center text-xs text-slate-900">
-                    {row ? row.totalA : ""}
-                  </td>
-                  <td className="h-8 border border-slate-500 px-3 py-1 text-xs text-slate-900">
-                    {row ? row.description : ""}
-                  </td>
-                </tr>
-              );
-            })}
+                    <td className="h-8 border border-slate-500 px-3 py-1 text-xs uppercase text-slate-900">
+                      {row ? row.studentName.toUpperCase() : ""}
+                    </td>
+                    <td className="h-8 border border-slate-500 px-3 py-1 text-center text-xs text-slate-900">
+                      {row ? row.className : ""}
+                    </td>
+                    {Array.from({ length: DAYS_IN_MONTH }, (_, dayIndex) => (
+                      <td key={dayIndex + 1} className="h-8 border border-slate-500 px-1 py-1 text-center text-xs text-slate-900">
+                        {row?.days[dayIndex] ?? ""}
+                      </td>
+                    ))}
+                    <td className="h-8 border border-slate-500 px-2 py-1 text-center text-xs text-slate-900">
+                      {row ? row.totalS : ""}
+                    </td>
+                    <td className="h-8 border border-slate-500 px-2 py-1 text-center text-xs text-slate-900">
+                      {row ? row.totalI : ""}
+                    </td>
+                    <td className="h-8 border border-slate-500 px-2 py-1 text-center text-xs text-slate-900">
+                      {row ? row.totalA : ""}
+                    </td>
+                    <td className="h-8 border border-slate-500 px-3 py-1 text-xs text-slate-900">
+                      {row ? row.description : ""}
+                    </td>
+                  </tr>
+                );
+              })
+            ) : (
+              <tr>
+                <td
+                  colSpan={TOTAL_COLUMNS}
+                  className="border border-slate-500 px-4 py-8 text-center text-sm text-slate-500"
+                >
+                  {emptyMessage}
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

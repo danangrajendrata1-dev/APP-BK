@@ -25,7 +25,6 @@ export const PROTECTED_ROUTE_PREFIXES = [
 
 export const APP_NAV_ITEMS: AppNavItem[] = [
   { label: "Dashboard", href: "/dashboard" },
-  { label: "Inventori dan Asesmen", href: "/assessments" },
   { label: "Data Siswa", href: "/students" },
   { label: "Daftar Hadir Sekolah", href: "/school-attendance" },
   {
@@ -34,15 +33,10 @@ export const APP_NAV_ITEMS: AppNavItem[] = [
   },
   { label: "Catatan Pelanggaran", href: "/counseling-records" },
   {
-    label: "Catatan Pendampingan Siswa Per Bulan",
-    href: "/student-assistances",
-  },
-  {
     label: "Rekapan Pelanggaran Siswa",
     href: "/class-assistances",
   },
   { label: "Surat & Dokumen", href: "/documents" },
-  { label: "Home Visit", href: "/home-visits" },
   { label: "Kotak Curhat Digital", href: "/confession-box" },
   { label: "Laporan dan Statistik", href: "/reports" },
 ];

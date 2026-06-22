@@ -36,7 +36,6 @@ export function StudentTable({
 }: StudentTableProps) {
   const items = result?.items ?? [];
   const pagination = result?.pagination;
-  const visibleRowCount = Math.max(items.length, PLACEHOLDER_ROW_COUNT);
   const showPagination = Boolean(pagination && selectedClass);
 
   return (
@@ -75,41 +74,61 @@ export function StudentTable({
             </tr>
           </thead>
           <tbody>
-            {Array.from({ length: visibleRowCount }, (_, index) => {
-              const student = items[index];
+            {!selectedClass ? (
+              <tr>
+                <td
+                  colSpan={9}
+                  className="border border-slate-500 px-4 py-8 text-center text-sm text-slate-500"
+                >
+                  Pilih kelas terlebih dahulu.
+                </td>
+              </tr>
+            ) : items.length ? (
+              Array.from({ length: Math.max(items.length, PLACEHOLDER_ROW_COUNT) }, (_, index) => {
+                const student = items[index];
 
-              return (
-                <tr key={student?.id ?? `placeholder-${index}`} className="bg-white">
-                  <td className="h-8 border border-slate-500 px-2 py-1 text-center text-xs text-slate-900">
-                    {student?.nisn ?? ""}
-                  </td>
-                  <td className="h-8 border border-slate-500 px-3 py-1 text-xs uppercase tracking-wide text-slate-900">
-                    {student ? student.fullName.toUpperCase() : ""}
-                  </td>
-                  <td className="h-8 border border-slate-500 px-3 py-1 text-center text-xs text-slate-900">
-                    {student?.className ?? ""}
-                  </td>
-                  <td className="h-8 border border-slate-500 px-3 py-1 text-center text-xs text-slate-900">
-                    {student ? normalizeGender(student.gender) : ""}
-                  </td>
-                  <td className="h-8 border border-slate-500 px-3 py-1 text-xs text-slate-900">
-                    {student ? normalizeText(student.birthPlaceDate) : ""}
-                  </td>
-                  <td className="h-8 border border-slate-500 px-3 py-1 text-xs text-slate-900">
-                    {student ? normalizeText(student.address) : ""}
-                  </td>
-                  <td className="h-8 border border-slate-500 px-3 py-1 text-xs text-slate-900">
-                    {student ? normalizeText(student.phone) : ""}
-                  </td>
-                  <td className="h-8 border border-slate-500 px-3 py-1 text-xs text-slate-900">
-                    {student ? normalizeText(student.parentName) : ""}
-                  </td>
-                  <td className="h-8 border border-slate-500 px-3 py-1 text-center text-xs text-slate-900">
-                    {student?.status ?? ""}
-                  </td>
-                </tr>
-              );
-            })}
+                return (
+                  <tr key={student?.id ?? `placeholder-${index}`} className="bg-white">
+                    <td className="h-8 border border-slate-500 px-2 py-1 text-center text-xs text-slate-900">
+                      {student?.nisn ?? ""}
+                    </td>
+                    <td className="h-8 border border-slate-500 px-3 py-1 text-xs uppercase tracking-wide text-slate-900">
+                      {student ? student.fullName.toUpperCase() : ""}
+                    </td>
+                    <td className="h-8 border border-slate-500 px-3 py-1 text-center text-xs text-slate-900">
+                      {student?.className ?? ""}
+                    </td>
+                    <td className="h-8 border border-slate-500 px-3 py-1 text-center text-xs text-slate-900">
+                      {student ? normalizeGender(student.gender) : ""}
+                    </td>
+                    <td className="h-8 border border-slate-500 px-3 py-1 text-xs text-slate-900">
+                      {student ? normalizeText(student.birthPlaceDate) : ""}
+                    </td>
+                    <td className="h-8 border border-slate-500 px-3 py-1 text-xs text-slate-900">
+                      {student ? normalizeText(student.address) : ""}
+                    </td>
+                    <td className="h-8 border border-slate-500 px-3 py-1 text-xs text-slate-900">
+                      {student ? normalizeText(student.phone) : ""}
+                    </td>
+                    <td className="h-8 border border-slate-500 px-3 py-1 text-xs text-slate-900">
+                      {student ? normalizeText(student.parentName) : ""}
+                    </td>
+                    <td className="h-8 border border-slate-500 px-3 py-1 text-center text-xs text-slate-900">
+                      {student?.status ?? ""}
+                    </td>
+                  </tr>
+                );
+              })
+            ) : (
+              <tr>
+                <td
+                  colSpan={9}
+                  className="border border-slate-500 px-4 py-8 text-center text-sm text-slate-500"
+                >
+                  Belum ada data untuk kelas ini.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

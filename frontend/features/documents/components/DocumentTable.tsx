@@ -30,17 +30,19 @@ export function DocumentTable({ result }: Props) {
 
   if (!items.length) {
     return (
-      <EmptyState
-        title="Belum ada surat & dokumen"
-        description="Gunakan tombol Import Surat / Dokumen untuk menambahkan dokumen pertama."
-      />
+      <div className="border border-slate-300 bg-white">
+        <EmptyState
+          title="Belum ada surat & dokumen"
+          description="Gunakan tombol Import Surat / Dokumen untuk menambahkan dokumen pertama."
+        />
+      </div>
     );
   }
 
   const emptyRowCount = Math.max(0, 8 - items.length);
 
   return (
-    <div className="space-y-4">
+    <section className="space-y-4 border border-slate-300 bg-white">
       <div className="overflow-x-auto">
         <table className="min-w-full border-collapse bg-white text-xs text-slate-800 sm:text-sm">
           <thead>
@@ -83,7 +85,7 @@ export function DocumentTable({ result }: Props) {
           </tbody>
         </table>
       </div>
-      <div className="flex flex-col gap-3 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 border-t border-slate-200 px-3 py-3 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between">
         <p>
           Halaman {pagination.page} dari {pagination.totalPages}
         </p>
@@ -104,6 +106,6 @@ export function DocumentTable({ result }: Props) {
           </Button>
         </div>
       </div>
-    </div>
+    </section>
   );
 }

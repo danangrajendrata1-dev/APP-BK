@@ -119,11 +119,11 @@ export default async function SchoolAttendancePage({
         title="Daftar Hadir Sekolah"
         description="Tambah data lewat form, lalu lihat rekap kehadiran siswa per kelas dalam format tabel bulanan."
       />
-      <details className="border border-slate-500 bg-white">
-        <summary className="cursor-pointer list-none border-b border-slate-500 px-4 py-3 text-sm font-semibold uppercase tracking-wide text-slate-900">
+      <details className="border border-slate-300 bg-white">
+        <summary className="cursor-pointer list-none border-b border-slate-200 px-3 py-3 text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
           Tambah Daftar Hadir
         </summary>
-        <div className="p-4">
+        <div className="px-3 py-3">
           <SchoolAttendanceForm
             action={createSchoolAttendanceAction}
             initialValues={{
