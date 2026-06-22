@@ -1,8 +1,7 @@
 "use client";
 
 import { useRef } from "react";
-
-import { Button } from "@/components/ui/Button";
+import { useRouter } from "next/navigation";
 
 type StudentFilterProps = {
   classOptions: string[];
@@ -14,6 +13,7 @@ export function StudentFilter({
   selectedClass = "",
 }: StudentFilterProps) {
   const formRef = useRef<HTMLFormElement | null>(null);
+  const router = useRouter();
 
   return (
     <section className="border border-slate-300 bg-white">
@@ -26,9 +26,13 @@ export function StudentFilter({
             Pilih kelas untuk menampilkan daftar siswa.
           </p>
         </div>
-        <Button href="/students/create" size="sm">
+        <button
+          type="button"
+          onClick={() => router.push("/students/create")}
+          className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-3 py-2 text-sm font-semibold text-white transition hover:bg-slate-700"
+        >
           Tambah Data Siswa
-        </Button>
+        </button>
       </div>
       <form ref={formRef} className="px-3 py-3" method="get">
         <label className="block max-w-sm space-y-2">
