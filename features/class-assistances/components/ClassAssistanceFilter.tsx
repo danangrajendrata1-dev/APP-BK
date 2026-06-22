@@ -1,28 +1,60 @@
+"use client";
+
+import { useState } from "react";
+
+import { ClassSearchSelect } from "@/components/shared/ClassSearchSelect";
 import { Button } from "@/components/ui/Button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import type { ClassAssistanceFilters } from "@/features/class-assistances/types/classAssistance";
 
-type Props = { filters: ClassAssistanceFilters };
+type Props = {
+  filters: ClassAssistanceFilters;
+};
 
 export function ClassAssistanceFilter({ filters }: Props) {
+  const [className, setClassName] = useState(filters.className ?? "");
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Filter Daftar Pendampingan Per Kelas</CardTitle>
-        <CardDescription>Saring data berdasarkan kelas, jenis pelanggaran, dan SP akhir.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          <Input name="className" label="Kelas" defaultValue={filters.className} />
-          <Input name="violationType" label="Jenis Pelanggaran" defaultValue={filters.violationType} />
-          <Input name="finalWarningLetter" label="SP Akhir" defaultValue={filters.finalWarningLetter} />
-          <div className="flex flex-col gap-3 md:col-span-2 xl:col-span-3 xl:flex-row xl:justify-end">
-            <Button type="submit">Terapkan Filter</Button>
-            <Button href="/class-assistances" variant="outline">Reset Filter</Button>
+    <section className="border border-slate-300 bg-white">
+      <div className="border-b border-slate-200 px-3 py-2">
+        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+          Filter Kelas
+        </p>
+      </div>
+      <form className="space-y-3 px-3 py-3" method="get">
+        <input type="hidden" name="className" value={className} />
+        <div className="grid gap-3 lg:grid-cols-[minmax(280px,1.3fr)_minmax(180px,0.9fr)_minmax(180px,0.9fr)_auto]">
+          <ClassSearchSelect
+            key={className || "all-classes"}
+            label="Kelas"
+            value={className}
+            hint="Cari kelas lalu pilih dari daftar."
+            onSelectClass={setClassName}
+          />
+          <Input
+            name="violationType"
+            label="Jenis Pelanggaran"
+            defaultValue={filters.violationType}
+            placeholder="Semua"
+            className="py-2.5"
+          />
+          <Input
+            name="finalWarningLetter"
+            label="SP Akhir"
+            defaultValue={filters.finalWarningLetter}
+            placeholder="Semua"
+            className="py-2.5"
+          />
+          <div className="flex items-end gap-2">
+            <Button type="submit" size="sm">
+              Terapkan
+            </Button>
+            <Button href="/class-assistances" size="sm" variant="outline">
+              Reset
+            </Button>
           </div>
-        </form>
-      </CardContent>
-    </Card>
+        </div>
+      </form>
+    </section>
   );
 }

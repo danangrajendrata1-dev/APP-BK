@@ -88,7 +88,7 @@ export default async function ClassAssistancesPage({ searchParams }: PageProps) 
         <ErrorState description={loadError} />
       ) : (
         <>
-          <ClassAssistanceFilter filters={filters} />
+          <ClassAssistanceFilter key={queryString || "class-assistance-filter"} filters={filters} />
           {result ? <ClassAssistanceTable result={result} queryString={queryString} /> : null}
         </>
       )}
