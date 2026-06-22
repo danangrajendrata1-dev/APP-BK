@@ -1,9 +1,6 @@
 import type {
-  ASSESSMENT_TYPE_OPTIONS,
-  ASSISTANCE_CODE_OPTIONS,
   BK_SERVICE_PURPOSE_OPTIONS,
   CONFESSION_CATEGORY_OPTIONS,
-  DOCUMENT_TYPE_OPTIONS,
   ROLE_OPTIONS,
   SCHOOL_ATTENDANCE_STATUS_OPTIONS,
   STUDENT_STATUS_OPTIONS,
@@ -17,12 +14,8 @@ export type SchoolAttendanceStatus =
   (typeof SCHOOL_ATTENDANCE_STATUS_OPTIONS)[number]["value"];
 export type BkServicePurpose =
   (typeof BK_SERVICE_PURPOSE_OPTIONS)[number]["value"];
-export type AssistanceCode =
-  (typeof ASSISTANCE_CODE_OPTIONS)[number]["value"];
-export type DocumentType = (typeof DOCUMENT_TYPE_OPTIONS)[number]["value"];
 export type ConfessionCategory =
   (typeof CONFESSION_CATEGORY_OPTIONS)[number]["value"];
-export type AssessmentType = (typeof ASSESSMENT_TYPE_OPTIONS)[number]["value"];
 
 export type OptionItem<T extends string = string> = SelectOption<T>;
 
@@ -124,17 +117,6 @@ export type ClassAssistanceFormValues = {
 export type DocumentFormValues = {
   title: string;
   description: string;
-};
-
-export type HomeVisitFormValues = {
-  visitDate: string;
-  studentId?: string;
-  studentName: string;
-  parentName: string;
-  className: string;
-  address: string;
-  visitResult: string;
-  followUp: string;
 };
 
 export type ConfessionFormValues = {

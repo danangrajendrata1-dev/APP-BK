@@ -13,5 +13,4 @@ export type DashboardSummary = {
   metrics: DashboardMetric[];
   studentsPerClass: DashboardSeriesItem[];
   counselingPerMonth: DashboardSeriesItem[];
-  assistancePerMonth: DashboardSeriesItem[];
 };

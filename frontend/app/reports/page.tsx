@@ -1,6 +1,5 @@
 import { ErrorState } from "@/components/shared/ErrorState";
 import { PageHeader } from "@/components/shared/PageHeader";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card";
 import { ReportsChartCard } from "@/features/reports/components/ReportsChartCard";
 import { ReportsFilter } from "@/features/reports/components/ReportsFilter";
 import { ReportsSummaryGrid } from "@/features/reports/components/ReportsSummaryGrid";
@@ -57,28 +56,11 @@ export default async function ReportsPage({ searchParams }: PageProps) {
           <ReportsFilter filters={filters} />
           <ReportsSummaryGrid summary={reports.summary} />
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Kelengkapan File Inventori dan Asesmen</CardTitle>
-              <CardDescription>Cek ketersediaan file inventori dan asesmen.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                {reports.assessmentChecklist.map((item) => (
-                  <div key={item.assessmentType} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-                    <p className="font-medium text-slate-900">{item.assessmentType}</p>
-                    <p className="mt-1 text-sm text-slate-600">{item.available ? "Sudah tersedia" : "Belum tersedia"}</p>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
           <div className="grid gap-6 xl:grid-cols-2">
             <ReportsChartCard title="Pelanggaran Per Bulan" description="Grafik jumlah pelanggaran per bulan." items={reports.charts.counselingPerMonth} />
             <ReportsChartCard title="Siswa Terbanyak Menerima Layanan" description="Grafik siswa dengan akumulasi layanan BK terbanyak." items={reports.charts.studentsMostServed} />
             <ReportsChartCard title="Kehadiran Siswa" description="Grafik distribusi status kehadiran siswa." items={reports.charts.attendanceByStatus} />
-            <ReportsChartCard title="Topik Pendampingan Terbanyak" description="Grafik topik atau kode pendampingan yang paling sering muncul." items={reports.charts.topAssistanceTopics} />
+            <ReportsChartCard title="Jenis Pelanggaran Terbanyak" description="Grafik jenis pelanggaran yang paling sering muncul." items={reports.charts.topViolationTypes} />
             <ReportsChartCard title="Kelas Dengan Layanan BK Terbanyak" description="Grafik kelas dengan aktivitas layanan BK paling tinggi." items={reports.charts.classesMostServed} />
           </div>
 

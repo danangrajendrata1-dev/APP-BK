@@ -1,5 +1,3 @@
-import type { AssessmentType } from "@/types/common";
-
 export type ReportsFilters = {
   month?: number;
   semester?: 1 | 2;
@@ -28,19 +26,14 @@ export type ReportsData = {
     counselingPerMonth: ChartItem[];
     studentsMostServed: ChartItem[];
     attendanceByStatus: ChartItem[];
-    topAssistanceTopics: ChartItem[];
+    topViolationTypes: ChartItem[];
     classesMostServed: ChartItem[];
   };
-  assessmentChecklist: Array<{
-    assessmentType: AssessmentType;
-    available: boolean;
-  }>;
   summary: {
     attendanceRows: number;
     counselingRows: number;
-    assistanceRows: number;
+    classAssistanceRows: number;
     parentCallRows: number;
-    homeVisitRows: number;
     classRows: number;
     semesterRows: number;
     yearlyRows: number;

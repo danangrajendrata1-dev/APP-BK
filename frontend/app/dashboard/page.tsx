@@ -22,10 +22,9 @@ export default async function DashboardPage() {
       ) : summary ? (
         <>
           <DashboardMetricGrid metrics={summary.metrics} />
-          <div className="grid gap-6 xl:grid-cols-3">
+          <div className="grid gap-6 xl:grid-cols-2">
             <DashboardSeriesCard title="Jumlah Siswa Per Kelas" description="Distribusi jumlah siswa berdasarkan kelas." series={summary.studentsPerClass} />
             <DashboardSeriesCard title="Jumlah Pelanggaran Per Bulan" description="Jumlah catatan pelanggaran setiap bulan." series={summary.counselingPerMonth} />
-            <DashboardSeriesCard title="Jumlah Pendampingan Per Bulan" description="Jumlah pendampingan siswa setiap bulan." series={summary.assistancePerMonth} />
           </div>
         </>
       ) : null}

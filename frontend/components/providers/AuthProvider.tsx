@@ -146,6 +146,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isLoading: true,
   });
   const profileCacheRef = useRef<Record<string, AuthContextValue>>({});
+  const profileFetchPromiseRef = useRef<Record<string, Promise<AuthContextValue> | undefined>>({});
   const lastResolvedUserIdRef = useRef<string | null>(null);
   const currentUserRef = useRef<User | null>(null);
 
@@ -159,6 +160,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async function resolveAuthState(user: User | null) {
       if (!user) {
         lastResolvedUserIdRef.current = null;
+        profileFetchPromiseRef.current = {};
         return {
           user: null,
           role: "siswa",
@@ -177,15 +179,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         };
       }
 
-      const nextState = await buildAuthState(user);
-      profileCacheRef.current[user.id] = nextState;
-      lastResolvedUserIdRef.current = user.id;
-      return nextState;
+      const pendingState = profileFetchPromiseRef.current[user.id];
+
+      if (pendingState) {
+        lastResolvedUserIdRef.current = user.id;
+        return pendingState;
+      }
+
+      const nextStatePromise = buildAuthState(user)
+        .then((nextState) => {
+          profileCacheRef.current[user.id] = nextState;
+          lastResolvedUserIdRef.current = user.id;
+          delete profileFetchPromiseRef.current[user.id];
+          return nextState;
+        })
+        .catch((error) => {
+          delete profileFetchPromiseRef.current[user.id];
+          throw error;
+        });
+
+      profileFetchPromiseRef.current[user.id] = nextStatePromise;
+
+      return nextStatePromise;
     }
 
     async function signOutForIdleTimeout() {
       await supabase.auth.signOut();
       profileCacheRef.current = {};
+      profileFetchPromiseRef.current = {};
       lastResolvedUserIdRef.current = null;
       clearLastActivity();
 
@@ -228,6 +249,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         writeLastActivity(getNow());
       } else {
         profileCacheRef.current = {};
+        profileFetchPromiseRef.current = {};
         lastResolvedUserIdRef.current = null;
         clearLastActivity();
       }
@@ -251,6 +273,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (event === "SIGNED_OUT") {
           profileCacheRef.current = {};
+          profileFetchPromiseRef.current = {};
           lastResolvedUserIdRef.current = null;
           clearLastActivity();
         } else if (session?.user) {

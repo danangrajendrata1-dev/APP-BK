@@ -10,15 +10,12 @@ export const BK_HOME_ROUTE = "/dashboard";
 
 export const PROTECTED_ROUTE_PREFIXES = [
   "/dashboard",
-  "/assessments",
   "/students",
   "/school-attendance",
   "/bk-service-attendance",
   "/counseling-records",
-  "/student-assistances",
   "/class-assistances",
   "/documents",
-  "/home-visits",
   "/confession-box",
   "/reports",
 ] as const;
