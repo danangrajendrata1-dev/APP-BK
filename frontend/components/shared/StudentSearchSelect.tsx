@@ -4,9 +4,8 @@ import { useEffect, useRef, useState } from "react";
 
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { logSupabaseError } from "@/lib/supabase/error";
-import type { Database } from "@/types/database";
-
 import { useDebouncedValue } from "@/components/shared/useDebouncedValue";
+import type { Database } from "@/types/database";
 
 const MIN_STUDENT_SEARCH_LENGTH = 2;
 const STUDENT_SEARCH_LIMIT = 20;
@@ -28,7 +27,10 @@ type StudentSearchSelectProps = {
   value: StudentSearchOption | null;
 };
 
-type StudentSearchRow = Database["public"]["Views"]["v_students_with_relations"]["Row"];
+type StudentSearchRow = Pick<
+  Database["public"]["Tables"]["students"]["Row"],
+  "id" | "full_name" | "nisn" | "class_name"
+>;
 
 function formatStudentLabel(student: StudentSearchOption) {
   return student.nis
@@ -79,13 +81,14 @@ export function StudentSearchSelect({
 
     let isCancelled = false;
 
-      async function searchStudents() {
-        setIsLoading(true);
-        setErrorMessage("");
+    async function searchStudents() {
+      setIsLoading(true);
+      setErrorMessage("");
 
-        let query = supabase
-        .from("v_students_with_relations")
+      let query = supabase
+        .from("students")
         .select("id, full_name, nisn, class_name")
+        .is("deleted_at", null)
         .or(`full_name.ilike.%${keyword}%,nisn.ilike.%${keyword}%`)
         .order("full_name", { ascending: true })
         .limit(STUDENT_SEARCH_LIMIT);

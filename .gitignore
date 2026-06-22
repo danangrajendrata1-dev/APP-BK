@@ -1,8 +1,32 @@
 node_modules
-.next
+# dependencies
+node_modules/
+**/node_modules/
+
+# next
+.next/
+**/.next/
+out/
+
+# build
+dist/
+build/
+coverage/
+
+# vercel
+.vercel/
+
+# env
 .env
 .env.local
 .env.*.local
-.vercel
+**/.env
+**/.env.local
+**/.env.*.local
+
+# OS
 .DS_Store
-coverage
+Thumbs.db
+
+# temporary backups
+.git_broken_backup_*/

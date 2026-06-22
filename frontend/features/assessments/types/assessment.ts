@@ -5,7 +5,6 @@ export type AssessmentFileItem = {
   title: string;
   assessmentType: AssessmentType;
   filePath: string;
-  fileUrl: string;
   description: string;
   updatedAt: string;
 };

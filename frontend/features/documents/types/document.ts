@@ -11,7 +11,6 @@ export type DocumentItem = {
   fileName: string;
   mimeType: string;
   fileSize: number;
-  fileUrl: string;
   description: string;
 };
 

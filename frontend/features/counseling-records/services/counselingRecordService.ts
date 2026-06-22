@@ -14,28 +14,22 @@ const DEFAULT_PAGE = 1;
 const DEFAULT_PAGE_SIZE = 20;
 const DAYS_IN_MONTH = 31;
 const COUNSELING_RECORD_LIST_COLUMNS =
-  "id, counseling_date, student_id, student_name, class_name, meeting_number, media, counseling_type, topic, counseling_result, follow_up, description, created_at, updated_at";
+  "id, violation_date, student_id, student_name, class_name, violation_code, description, created_at, updated_at";
 
-type CounselingRow = Database["public"]["Tables"]["counseling_records"]["Row"];
+type CounselingRow = Database["public"]["Tables"]["violation_records"]["Row"];
 type CounselingListRow = Pick<
   CounselingRow,
   | "id"
-  | "counseling_date"
+  | "violation_date"
   | "student_id"
   | "student_name"
   | "class_name"
-  | "meeting_number"
-  | "media"
-  | "counseling_type"
-  | "topic"
-  | "counseling_result"
-  | "follow_up"
+  | "violation_code"
   | "description"
   | "created_at"
   | "updated_at"
 >;
-type CounselingInsert =
-  Database["public"]["Tables"]["counseling_records"]["Insert"];
+type CounselingInsert = Database["public"]["Tables"]["violation_records"]["Insert"];
 type ViolationRecordRow = Database["public"]["Tables"]["violation_records"]["Row"];
 type ViolationSheetRow = Pick<
   ViolationRecordRow,
@@ -62,16 +56,16 @@ function getDateValue(value: string) {
 function mapCounselingRecord(row: CounselingListRow): CounselingRecordItem {
   return {
     id: row.id,
-    counselingDate: row.counseling_date,
+    counselingDate: row.violation_date,
     studentId: row.student_id ?? "",
     studentName: row.student_name,
     className: row.class_name,
-    meetingNumber: row.meeting_number,
-    media: row.media,
-    counselingType: row.counseling_type,
-    topic: normalizeText(row.topic),
-    counselingResult: normalizeText(row.counseling_result),
-    followUp: normalizeText(row.follow_up),
+    meetingNumber: null,
+    media: "Offline",
+    counselingType: "Individu",
+    topic: normalizeText(row.violation_code),
+    counselingResult: "",
+    followUp: "",
     description: normalizeText(row.description),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -81,17 +75,16 @@ function mapCounselingRecord(row: CounselingListRow): CounselingRecordItem {
 function mapCounselingPayload(
   values: CounselingRecordFormValues,
 ): CounselingInsert {
+  const counselingDate = new Date(`${values.counselingDate}T00:00:00`);
   return {
-    counseling_date: values.counselingDate,
-    student_id: values.studentId || null,
+    violation_date: values.counselingDate,
+    violation_year: counselingDate.getFullYear(),
+    violation_month: counselingDate.getMonth() + 1,
+    violation_day: counselingDate.getDate(),
+    student_id: values.studentId || "",
     student_name: values.studentName,
     class_name: values.className,
-    meeting_number: values.meetingNumber ?? null,
-    media: values.media,
-    counseling_type: values.counselingType,
-    topic: values.topic,
-    counseling_result: values.counselingResult,
-    follow_up: values.followUp,
+    violation_code: values.topic || null,
     description: values.description || null,
   };
 }
@@ -107,29 +100,25 @@ export async function getCounselingRecords(
   const to = from + pageSize - 1;
 
   let query = supabase
-    .from("v_counseling_records_with_relations" as never)
+    .from("violation_records")
     .select(COUNSELING_RECORD_LIST_COLUMNS, { count: "exact" })
-    .order("counseling_date", { ascending: false })
+    .order("violation_date", { ascending: false })
     .range(from, to);
 
   if (filters.month) {
     query = query.gte(
-      "counseling_date",
+      "violation_date",
       `${filters.year ?? new Date().getFullYear()}-${String(filters.month).padStart(2, "0")}-01`,
     );
     const monthEnd = new Date(filters.year ?? new Date().getFullYear(), filters.month, 0)
       .toISOString()
       .slice(0, 10);
-    query = query.lte("counseling_date", monthEnd);
+    query = query.lte("violation_date", monthEnd);
   } else if (filters.year) {
-    query = query.gte("counseling_date", `${filters.year}-01-01`);
-    query = query.lte("counseling_date", `${filters.year}-12-31`);
+    query = query.gte("violation_date", `${filters.year}-01-01`);
+    query = query.lte("violation_date", `${filters.year}-12-31`);
   }
   if (filters.className) query = query.ilike("class_name", `%${filters.className}%`);
-  if (filters.media) query = query.eq("media", filters.media);
-  if (filters.counselingType) {
-    query = query.eq("counseling_type", filters.counselingType);
-  }
 
   const { data, count, error } = await query;
   if (error) {
@@ -139,7 +128,7 @@ export async function getCounselingRecords(
       filters,
     });
     throw new Error(
-      buildSupabaseErrorMessage("Gagal memuat catatan konseling", error),
+      buildSupabaseErrorMessage("Gagal memuat catatan pelanggaran", error),
     );
   }
 
@@ -161,9 +150,9 @@ export async function createCounselingRecord(
 ): Promise<CounselingRecordItem> {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
-    .from("counseling_records")
+    .from("violation_records")
     .insert(mapCounselingPayload(values) as never)
-    .select("*")
+    .select(COUNSELING_RECORD_LIST_COLUMNS)
     .single();
 
   if (error) {
@@ -172,7 +161,7 @@ export async function createCounselingRecord(
       counselingDate: values.counselingDate,
     });
     throw new Error(
-      buildSupabaseErrorMessage("Gagal menyimpan catatan konseling", error),
+      buildSupabaseErrorMessage("Gagal menyimpan catatan pelanggaran", error),
     );
   }
   return mapCounselingRecord(data as CounselingListRow);
@@ -192,7 +181,8 @@ export async function getCounselingRecordSheet(
       .from("students")
       .select("id, full_name, class_name")
       .order("class_name", { ascending: true })
-      .order("full_name", { ascending: true }),
+      .order("full_name", { ascending: true })
+      .is("deleted_at", null),
     supabase
       .from("violation_records")
       .select("id, violation_date, student_id, student_name, class_name, description")

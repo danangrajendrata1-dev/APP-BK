@@ -162,7 +162,6 @@ export async function getReportsData(filters: ReportsFilters): Promise<ReportsDa
   const supabase = await createSupabaseServerClient();
   const dateRange = getDateRange(filters);
   const classPattern = filters.className ? `%${filters.className}%` : null;
-  const parentCallPattern: string | null = null;
   const counselingMonthPeriods = getMonthPeriodsFromFilters(filters);
   const applyClassFilter = <T,>(query: T) =>
     classPattern && "ilike" in (query as object)
@@ -189,19 +188,19 @@ export async function getReportsData(filters: ReportsFilters): Promise<ReportsDa
   };
 
   let attendanceQuery = supabase
-    .from("v_school_attendance_with_relations" as never)
-    .select("attendance_date, student_name, class_name, status, description");
+    .from("school_attendance")
+    .select("attendance_date, student_name, class_name, attendance_status, description");
   attendanceQuery = applyClassFilter(applyDateFilter(attendanceQuery, "attendance_date"));
   attendanceQuery = attendanceQuery
     .order("attendance_date", { ascending: false })
     .limit(REPORT_SECTION_ROW_LIMIT);
 
   let counselingQuery = supabase
-    .from("v_counseling_records_with_relations" as never)
-    .select("counseling_date, student_name, class_name, meeting_number, media, counseling_type, topic, counseling_result, follow_up, description");
-  counselingQuery = applyClassFilter(applyDateFilter(counselingQuery, "counseling_date"));
+    .from("violation_records")
+    .select("violation_date, student_name, class_name, violation_code, description");
+  counselingQuery = applyClassFilter(applyDateFilter(counselingQuery, "violation_date"));
   counselingQuery = counselingQuery
-    .order("counseling_date", { ascending: false })
+    .order("violation_date", { ascending: false })
     .limit(REPORT_SECTION_ROW_LIMIT);
 
   let studentAssistanceQuery = supabase
@@ -236,18 +235,15 @@ export async function getReportsData(filters: ReportsFilters): Promise<ReportsDa
     .limit(REPORT_SECTION_ROW_LIMIT);
 
   let documentsQuery = supabase
-    .from("v_bk_documents_with_relations" as never)
-    .select("document_date, student_name, class_name, document_type, letter_number, description");
-  documentsQuery = applyClassFilter(applyDateFilter(documentsQuery, "document_date"));
-  if (parentCallPattern) {
-    documentsQuery = documentsQuery.ilike("document_type", parentCallPattern);
-  }
+    .from("bk_documents")
+    .select("id, title, description, file_name, created_at");
+  documentsQuery = applyDateFilter(documentsQuery, "created_at");
   documentsQuery = documentsQuery
-    .order("document_date", { ascending: false })
+    .order("created_at", { ascending: false })
     .limit(REPORT_SECTION_ROW_LIMIT);
 
   let homeVisitsQuery = supabase
-    .from("v_home_visits_with_relations" as never)
+    .from("home_visits")
     .select("visit_date, student_name, class_name, parent_name, address, visit_result, follow_up");
   homeVisitsQuery = applyClassFilter(applyDateFilter(homeVisitsQuery, "visit_date"));
   homeVisitsQuery = homeVisitsQuery
@@ -260,17 +256,17 @@ export async function getReportsData(filters: ReportsFilters): Promise<ReportsDa
   studentsQuery = applyClassFilter(studentsQuery);
 
   let bkServiceAttendanceQuery = supabase
-    .from("v_bk_service_attendance_with_relations" as never)
-    .select("service_date, student_name, class_name");
+    .from("bk_service_attendance")
+    .select("visit_date, student_name, class_name");
   bkServiceAttendanceQuery = applyClassFilter(
-    applyDateFilter(bkServiceAttendanceQuery, "service_date"),
+    applyDateFilter(bkServiceAttendanceQuery, "visit_date"),
   );
 
   let counselingStatsQuery = supabase
-    .from("v_counseling_records_with_relations" as never)
+    .from("violation_records")
     .select("student_name, class_name");
   counselingStatsQuery = applyClassFilter(
-    applyDateFilter(counselingStatsQuery, "counseling_date"),
+    applyDateFilter(counselingStatsQuery, "violation_date"),
   );
 
   let studentAssistanceStatsQuery = supabase
@@ -297,17 +293,17 @@ export async function getReportsData(filters: ReportsFilters): Promise<ReportsDa
   classAssistanceStatsQuery = applyClassFilter(classAssistanceStatsQuery);
 
   let attendanceCountQuery = supabase
-    .from("v_school_attendance_with_relations" as never)
+    .from("school_attendance")
     .select("id", { count: "exact", head: true });
   attendanceCountQuery = applyClassFilter(
     applyDateFilter(attendanceCountQuery, "attendance_date"),
   );
 
   let counselingCountQuery = supabase
-    .from("v_counseling_records_with_relations" as never)
+    .from("violation_records")
     .select("id", { count: "exact", head: true });
   counselingCountQuery = applyClassFilter(
-    applyDateFilter(counselingCountQuery, "counseling_date"),
+    applyDateFilter(counselingCountQuery, "violation_date"),
   );
 
   let studentAssistanceCountQuery = supabase
@@ -334,17 +330,12 @@ export async function getReportsData(filters: ReportsFilters): Promise<ReportsDa
   classAssistanceCountQuery = applyClassFilter(classAssistanceCountQuery);
 
   let parentCallCountQuery = supabase
-    .from("v_bk_documents_with_relations" as never)
+    .from("bk_documents")
     .select("id", { count: "exact", head: true });
-  parentCallCountQuery = applyClassFilter(
-    applyDateFilter(parentCallCountQuery, "document_date"),
-  );
-  if (parentCallPattern) {
-    parentCallCountQuery = parentCallCountQuery.ilike("document_type", parentCallPattern);
-  }
+  parentCallCountQuery = applyDateFilter(parentCallCountQuery, "created_at");
 
   let homeVisitsCountQuery = supabase
-    .from("v_home_visits_with_relations" as never)
+    .from("home_visits")
     .select("id", { count: "exact", head: true });
   homeVisitsCountQuery = applyClassFilter(
     applyDateFilter(homeVisitsCountQuery, "visit_date"),
@@ -380,7 +371,7 @@ export async function getReportsData(filters: ReportsFilters): Promise<ReportsDa
     homeVisitsQuery,
     studentsQuery,
     bkServiceAttendanceQuery,
-    supabase.from("v_assessment_files_with_relations" as never).select("assessment_type"),
+    supabase.from("assessment_files").select("assessment_type"),
     counselingStatsQuery,
     studentAssistanceStatsQuery,
     classAssistanceStatsQuery,
@@ -393,48 +384,48 @@ export async function getReportsData(filters: ReportsFilters): Promise<ReportsDa
     Promise.all(
       SCHOOL_ATTENDANCE_STATUS_OPTIONS.map((option) => {
         let statusCountQuery = supabase
-          .from("v_school_attendance_with_relations" as never)
+          .from("school_attendance")
           .select("id", { count: "exact", head: true });
         statusCountQuery = applyClassFilter(
           applyDateFilter(statusCountQuery, "attendance_date"),
         );
-        return statusCountQuery.eq("status", option.value);
+        return statusCountQuery.eq("attendance_status", option.value);
       }),
     ),
     Promise.all(
       counselingMonthPeriods.map((period) => {
         let counselingMonthCountQuery = supabase
-          .from("v_counseling_records_with_relations" as never)
+          .from("violation_records")
           .select("id", { count: "exact", head: true });
         counselingMonthCountQuery = applyClassFilter(counselingMonthCountQuery);
         return counselingMonthCountQuery
-          .gte("counseling_date", period.start)
-          .lte("counseling_date", period.end);
+          .gte("violation_date", period.start)
+          .lte("violation_date", period.end);
       }),
     ),
   ]);
 
-  if (attendanceResult.error) logSupabaseError("[Reports] v_school_attendance_with_relations list", attendanceResult.error, { filters, dateRange });
-  if (counselingResult.error) logSupabaseError("[Reports] v_counseling_records_with_relations list", counselingResult.error, { filters, dateRange });
+  if (attendanceResult.error) logSupabaseError("[Reports] school_attendance list", attendanceResult.error, { filters, dateRange });
+  if (counselingResult.error) logSupabaseError("[Reports] violation_records list", counselingResult.error, { filters, dateRange });
   if (studentAssistanceResult.error) logSupabaseError("[Reports] student_assistances list", studentAssistanceResult.error, { filters });
   if (classAssistanceResult.error) logSupabaseError("[Reports] class_assistances list", classAssistanceResult.error, { filters });
-  if (documentsResult.error) logSupabaseError("[Reports] v_bk_documents_with_relations list", documentsResult.error, { filters, dateRange });
-  if (homeVisitsResult.error) logSupabaseError("[Reports] v_home_visits_with_relations list", homeVisitsResult.error, { filters, dateRange });
+  if (documentsResult.error) logSupabaseError("[Reports] bk_documents list", documentsResult.error, { filters, dateRange });
+  if (homeVisitsResult.error) logSupabaseError("[Reports] home_visits list", homeVisitsResult.error, { filters, dateRange });
   if (studentsResult.error) logSupabaseError("[Reports] v_student_count_by_class", studentsResult.error, { filters });
-  if (bkServiceAttendanceResult.error) logSupabaseError("[Reports] v_bk_service_attendance_with_relations", bkServiceAttendanceResult.error, { filters, dateRange });
-  if (assessmentFilesResult.error) logSupabaseError("[Reports] v_assessment_files_with_relations", assessmentFilesResult.error, { filters });
-  if (counselingStatsResult.error) logSupabaseError("[Reports] v_counseling_records_with_relations stats", counselingStatsResult.error, { filters, dateRange });
+  if (bkServiceAttendanceResult.error) logSupabaseError("[Reports] bk_service_attendance", bkServiceAttendanceResult.error, { filters, dateRange });
+  if (assessmentFilesResult.error) logSupabaseError("[Reports] assessment_files", assessmentFilesResult.error, { filters });
+  if (counselingStatsResult.error) logSupabaseError("[Reports] violation_records stats", counselingStatsResult.error, { filters, dateRange });
   if (studentAssistanceStatsResult.error) logSupabaseError("[Reports] student_assistances stats", studentAssistanceStatsResult.error, { filters });
   if (classAssistanceStatsResult.error) logSupabaseError("[Reports] class_assistances stats", classAssistanceStatsResult.error, { filters });
-  if (attendanceCountResult.error) logSupabaseError("[Reports] v_school_attendance_with_relations count", attendanceCountResult.error, { filters, dateRange });
-  if (counselingCountResult.error) logSupabaseError("[Reports] v_counseling_records_with_relations count", counselingCountResult.error, { filters, dateRange });
+  if (attendanceCountResult.error) logSupabaseError("[Reports] school_attendance count", attendanceCountResult.error, { filters, dateRange });
+  if (counselingCountResult.error) logSupabaseError("[Reports] violation_records count", counselingCountResult.error, { filters, dateRange });
   if (studentAssistanceCountResult.error) logSupabaseError("[Reports] student_assistances count", studentAssistanceCountResult.error, { filters });
   if (classAssistanceCountResult.error) logSupabaseError("[Reports] class_assistances count", classAssistanceCountResult.error, { filters });
-  if (parentCallCountResult.error) logSupabaseError("[Reports] v_bk_documents_with_relations count", parentCallCountResult.error, { filters, dateRange });
-  if (homeVisitsCountResult.error) logSupabaseError("[Reports] v_home_visits_with_relations count", homeVisitsCountResult.error, { filters, dateRange });
+  if (parentCallCountResult.error) logSupabaseError("[Reports] bk_documents count", parentCallCountResult.error, { filters, dateRange });
+  if (homeVisitsCountResult.error) logSupabaseError("[Reports] home_visits count", homeVisitsCountResult.error, { filters, dateRange });
   attendanceStatusCountResults.forEach((result, index) => {
     if (result.error) {
-      logSupabaseError("[Reports] v_school_attendance_with_relations status count", result.error, {
+      logSupabaseError("[Reports] school_attendance status count", result.error, {
         status: SCHOOL_ATTENDANCE_STATUS_OPTIONS[index]?.value ?? null,
         filters,
         dateRange,
@@ -443,7 +434,7 @@ export async function getReportsData(filters: ReportsFilters): Promise<ReportsDa
   });
   counselingPerMonthCountResults.forEach((result, index) => {
     if (result.error) {
-      logSupabaseError("[Reports] v_counseling_records_with_relations month count", result.error, {
+      logSupabaseError("[Reports] violation_records month count", result.error, {
         period: counselingMonthPeriods[index],
         filters,
       });
@@ -535,28 +526,22 @@ export async function getReportsData(filters: ReportsFilters): Promise<ReportsDa
     attendance_date: string;
     student_name: string;
     class_name: string;
-    status: string;
+    attendance_status: string;
     description: string | null;
   }>;
   const counselingRowsSource = (counselingResult.data ?? []) as Array<{
-    counseling_date: string;
+    violation_date: string;
     student_name: string;
     class_name: string;
-    meeting_number: number | null;
-    media: string;
-    counseling_type: string;
-    topic: string | null;
-    counseling_result: string | null;
-    follow_up: string | null;
+    violation_code: string | null;
     description: string | null;
   }>;
   const documentsRowsSource = (documentsResult.data ?? []) as Array<{
-    document_date: string;
-    letter_number: string;
-    student_name: string;
-    class_name: string | null;
-    document_type: string;
+    id: string;
+    title: string;
     description: string | null;
+    file_name: string;
+    created_at: string;
   }>;
   const homeVisitsRowsSource = (homeVisitsResult.data ?? []) as Array<{
     visit_date: string;
@@ -570,10 +555,12 @@ export async function getReportsData(filters: ReportsFilters): Promise<ReportsDa
   const bkServiceAttendanceRowsSource = (bkServiceAttendanceResult.data ?? []) as Array<{
     student_name: string;
     class_name: string;
+    visit_date: string;
   }>;
   const counselingStatsRowsSource = (counselingStatsResult.data ?? []) as Array<{
     student_name: string;
     class_name: string;
+    violation_date: string;
   }>;
   const classAssistanceStatsRowsSource = classAssistanceStatsMissingSchema
     ? []
@@ -589,16 +576,16 @@ export async function getReportsData(filters: ReportsFilters): Promise<ReportsDa
       Tanggal: row.attendance_date,
       "Nama Siswa": row.student_name,
       Kelas: row.class_name,
-      Status: row.status,
+      Status: row.attendance_status,
       Keterangan: normalize(row.description),
     }));
 
   const counselingRows = counselingRowsSource
     .map((row) => ({
-      Tanggal: row.counseling_date,
+      Tanggal: row.violation_date,
       "Nama Siswa": row.student_name,
       Kelas: row.class_name,
-      "Kode Pelanggaran": normalize(row.topic),
+      "Kode Pelanggaran": normalize(row.violation_code),
       Keterangan: normalize(row.description),
     }));
 
@@ -622,11 +609,9 @@ export async function getReportsData(filters: ReportsFilters): Promise<ReportsDa
 
   const parentCallRows = documentsRowsSource
     .map((row) => ({
-      Tanggal: row.document_date,
-      "Nomor Surat": row.letter_number,
-      "Nama Siswa": row.student_name,
-      Kelas: normalize(row.class_name),
-      "Jenis Surat": row.document_type,
+      Tanggal: row.created_at,
+      "Nama Dokumen": row.title,
+      "Nama File": row.file_name,
       Keterangan: normalize(row.description),
     }));
 
@@ -747,7 +732,7 @@ export async function getReportsData(filters: ReportsFilters): Promise<ReportsDa
     {
       title: "Rekap Surat & Dokumen",
       description: `Daftar surat dan dokumen BK. Menampilkan maksimal ${REPORT_SECTION_ROW_LIMIT} baris terbaru.`,
-      columns: ["Tanggal", "Nomor Surat", "Nama Siswa", "Kelas", "Jenis Surat", "Keterangan"],
+      columns: ["Tanggal", "Nama Dokumen", "Nama File", "Keterangan"],
       rows: buildTableRows(parentCallRows),
     },
     {

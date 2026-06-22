@@ -1,9 +1,5 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import {
-  createSignedFileUrl,
-  uploadPrivateFile,
-  validateUploadedFile,
-} from "@/lib/supabase/storage";
+import { uploadPrivateFile, validateUploadedFile } from "@/lib/supabase/storage";
 import { buildSupabaseErrorMessage, logSupabaseError } from "@/lib/supabase/error";
 import type { DocumentFormValues } from "@/types/common";
 import type { Database } from "@/types/database";
@@ -28,7 +24,7 @@ const DOCUMENT_ALLOWED_TYPES = [
   "image/webp",
 ] as const;
 
-type DocumentRow = Database["public"]["Tables"]["documents"]["Row"];
+type DocumentRow = Database["public"]["Tables"]["bk_documents"]["Row"];
 type DocumentListRow = Pick<
   DocumentRow,
   | "id"
@@ -41,26 +37,20 @@ type DocumentListRow = Pick<
   | "created_at"
   | "updated_at"
 >;
-type DocumentInsert = Database["public"]["Tables"]["documents"]["Insert"];
+type DocumentInsert = Database["public"]["Tables"]["bk_documents"]["Insert"];
 
 function normalizeText(value: string | null | undefined) {
   return value ?? "";
 }
 
-async function mapDocument(row: DocumentListRow): Promise<DocumentItem> {
-  const filePath = normalizeText(row.file_path);
-  const fileUrl = filePath
-    ? ((await createSignedFileUrl(DOCUMENT_BUCKET, filePath)) ?? "")
-    : "";
-
+function mapDocument(row: DocumentListRow): DocumentItem {
   return {
     id: row.id,
     title: row.title,
-    filePath,
+    filePath: normalizeText(row.file_path),
     fileName: normalizeText(row.file_name),
     mimeType: normalizeText(row.mime_type),
     fileSize: row.file_size ?? 0,
-    fileUrl,
     description: normalizeText(row.description),
   };
 }
@@ -91,7 +81,7 @@ export async function getDocuments(
   const to = from + pageSize - 1;
 
   let query = supabase
-    .from("documents")
+    .from("bk_documents")
     .select(DOCUMENT_LIST_COLUMNS, { count: "exact" })
     .order("created_at", { ascending: false })
     .range(from, to);
@@ -108,9 +98,7 @@ export async function getDocuments(
     throw new Error(buildSupabaseErrorMessage("Gagal memuat surat dan dokumen", error));
   }
 
-  const items = await Promise.all(
-    ((data ?? []) as DocumentListRow[]).map(mapDocument),
-  );
+  const items = ((data ?? []) as DocumentListRow[]).map(mapDocument);
   const totalItems = count ?? 0;
 
   return {
@@ -143,7 +131,7 @@ export async function createDocument(
 
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
-    .from("documents")
+    .from("bk_documents")
     .insert(mapDocumentPayload(values, filePath, file) as never)
     .select(DOCUMENT_LIST_COLUMNS)
     .single();

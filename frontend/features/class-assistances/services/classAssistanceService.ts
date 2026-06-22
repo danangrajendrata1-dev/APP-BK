@@ -125,7 +125,7 @@ export async function createClassAssistance(
   const { data, error } = await supabase
     .from("class_assistances")
     .insert(mapClassAssistancePayload(values) as never)
-    .select("*")
+    .select(CLASS_ASSISTANCE_LIST_COLUMNS)
     .single();
   if (error) {
     logSupabaseError("[ClassAssistances] createClassAssistance", error, {

@@ -12,22 +12,26 @@ import type {
 const DEFAULT_PAGE = 1;
 const DEFAULT_PAGE_SIZE = 20;
 const CONFESSION_LIST_COLUMNS =
-  "id, confession_date, student_id, student_name, class_name, category, content, description, created_by";
+  "id, confession_date, user_id, student_id, student_name, class_name, category, content, description, status, deleted_at, created_at, updated_at";
 
-type ConfessionRow = Database["public"]["Tables"]["confession_box"]["Row"];
+type ConfessionRow = Database["public"]["Tables"]["digital_confessions"]["Row"];
 type ConfessionListRow = Pick<
   ConfessionRow,
   | "id"
   | "confession_date"
+  | "user_id"
   | "student_id"
   | "student_name"
   | "class_name"
   | "category"
   | "content"
   | "description"
-  | "created_by"
+  | "status"
+  | "deleted_at"
+  | "created_at"
+  | "updated_at"
 >;
-type ConfessionInsert = Database["public"]["Tables"]["confession_box"]["Insert"];
+type ConfessionInsert = Database["public"]["Tables"]["digital_confessions"]["Insert"];
 
 function normalizeText(value: string | null | undefined) {
   return value ?? "";
@@ -43,7 +47,7 @@ function mapConfession(row: ConfessionListRow): ConfessionItem {
     category: row.category,
     content: row.content,
     description: normalizeText(row.description),
-    createdBy: row.created_by ?? "",
+    createdBy: row.user_id ?? "",
   };
 }
 
@@ -53,12 +57,13 @@ function mapConfessionPayload(
 ): ConfessionInsert {
   return {
     confession_date: values.confessionDate,
+    user_id: userId,
+    student_id: null,
     student_name: values.studentName || null,
     class_name: values.className,
     category: values.category,
     content: values.content,
     description: values.description || null,
-    created_by: userId,
   };
 }
 
@@ -73,10 +78,11 @@ export async function getConfessions(
   const to = from + pageSize - 1;
 
   let query = supabase
-    .from("v_digital_confessions_with_relations" as never)
+    .from("digital_confessions")
     .select(CONFESSION_LIST_COLUMNS, { count: "exact" })
     .order("confession_date", { ascending: false })
-    .range(from, to);
+    .range(from, to)
+    .is("deleted_at", null);
 
   if (filters.category) query = query.eq("category", filters.category);
 
@@ -118,9 +124,9 @@ export async function createConfession(
   }
 
   const { data, error } = await supabase
-    .from("confession_box")
+    .from("digital_confessions")
     .insert(mapConfessionPayload(values, user.id) as never)
-    .select("*")
+    .select(CONFESSION_LIST_COLUMNS)
     .single();
 
   if (error) {

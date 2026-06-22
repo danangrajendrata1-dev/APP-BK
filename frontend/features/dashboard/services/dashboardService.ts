@@ -86,7 +86,7 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
     homeVisitsResult,
     confessionsResult,
   ] = await Promise.all([
-    supabase.from("students").select("id", { count: "exact", head: true }),
+    supabase.from("students").select("id", { count: "exact", head: true }).is("deleted_at", null),
     supabase
       .from("v_student_count_by_class")
       .select("class_name, total_students")
@@ -106,9 +106,9 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
       // TODO: Tahap berikutnya pindahkan agregasi assistance per month ke SQL view/RPC
       // agar dashboard tidak perlu mengambil semua baris dalam rentang bulan lalu menjumlahkannya di aplikasi.
       .or(assistanceRangeFilter),
-    supabase.from("documents").select("id", { count: "exact", head: true }),
+    supabase.from("bk_documents").select("id", { count: "exact", head: true }),
     supabase.from("home_visits").select("id", { count: "exact", head: true }),
-    supabase.from("confession_box").select("id", { count: "exact", head: true }),
+    supabase.from("digital_confessions").select("id", { count: "exact", head: true }).is("deleted_at", null),
   ]);
 
   if (studentsResult.error) {
@@ -138,13 +138,13 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
     }
   }
   if (documentsResult.error) {
-    logSupabaseError("[Dashboard] documents count", documentsResult.error);
+    logSupabaseError("[Dashboard] bk_documents count", documentsResult.error);
   }
   if (homeVisitsResult.error) {
     logSupabaseError("[Dashboard] home_visits count", homeVisitsResult.error);
   }
   if (confessionsResult.error) {
-    logSupabaseError("[Dashboard] confession_box count", confessionsResult.error);
+    logSupabaseError("[Dashboard] digital_confessions count", confessionsResult.error);
   }
 
   if (
@@ -217,7 +217,7 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
       {
         label: "Jumlah Surat Terbit",
         value: documentsResult.count ?? 0,
-        helper: "Data dari tabel documents",
+        helper: "Data dari tabel bk_documents",
       },
       {
         label: "Jumlah Home Visit",
@@ -227,7 +227,7 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
       {
         label: "Jumlah Curhat Digital",
         value: confessionsResult.count ?? 0,
-        helper: "Data dari tabel confession_box",
+        helper: "Data dari tabel digital_confessions",
       },
     ],
     studentsPerClass: sortSeriesDescending(

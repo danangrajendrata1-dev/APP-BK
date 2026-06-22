@@ -167,7 +167,8 @@ export async function getStudentReferences(): Promise<StudentReference[]> {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("students")
-    .select("id, full_name, class_name")
+    .select("id, full_name, class_name, nisn")
+    .is("deleted_at", null)
     .order("full_name", { ascending: true });
 
   if (error) {

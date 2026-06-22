@@ -1,9 +1,5 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import {
-  createSignedFileUrl,
-  uploadPrivateFile,
-  validateUploadedFile,
-} from "@/lib/supabase/storage";
+import { uploadPrivateFile, validateUploadedFile } from "@/lib/supabase/storage";
 import { buildSupabaseErrorMessage, logSupabaseError } from "@/lib/supabase/error";
 import type { Database } from "@/types/database";
 import type { HomeVisitFormValues } from "@/types/common";
@@ -40,18 +36,12 @@ type HomeVisitListRow = Pick<
   | "follow_up"
   | "documentation_path"
 >;
-type HomeVisitInsert = Database["public"]["Tables"]["home_visits"]["Insert"];
 
 function normalizeText(value: string | null | undefined) {
   return value ?? "";
 }
 
-async function mapHomeVisit(row: HomeVisitListRow): Promise<HomeVisitItem> {
-  const documentationPath = normalizeText(row.documentation_path);
-  const documentationUrl = documentationPath
-    ? ((await createSignedFileUrl(HOME_VISIT_BUCKET, documentationPath)) ?? "")
-    : "";
-
+function mapHomeVisit(row: HomeVisitListRow): HomeVisitItem {
   return {
     id: row.id,
     visitDate: row.visit_date,
@@ -62,27 +52,7 @@ async function mapHomeVisit(row: HomeVisitListRow): Promise<HomeVisitItem> {
     address: normalizeText(row.address),
     visitResult: normalizeText(row.visit_result),
     followUp: normalizeText(row.follow_up),
-    documentationPath,
-    documentationUrl,
-  };
-}
-
-function mapHomeVisitPayload(
-  values: HomeVisitFormValues,
-  documentationPath: string,
-  documentationUrl: string,
-): HomeVisitInsert {
-  return {
-    visit_date: values.visitDate,
-    student_id: values.studentId || null,
-    student_name: values.studentName,
-    parent_name: values.parentName,
-    class_name: values.className,
-    address: values.address,
-    visit_result: values.visitResult,
-    follow_up: values.followUp,
-    documentation_path: documentationPath,
-    documentation_url: documentationUrl || null,
+    documentationPath: normalizeText(row.documentation_path),
   };
 }
 
@@ -97,7 +67,7 @@ export async function getHomeVisits(
   const to = from + pageSize - 1;
 
   let query = supabase
-    .from("v_home_visits_with_relations" as never)
+    .from("home_visits")
     .select(HOME_VISIT_LIST_COLUMNS, { count: "exact" })
     .order("visit_date", { ascending: false })
     .range(from, to);
@@ -129,9 +99,7 @@ export async function getHomeVisits(
     throw new Error(buildSupabaseErrorMessage("Gagal memuat data home visit", error));
   }
 
-  const items = await Promise.all(
-    ((data ?? []) as HomeVisitListRow[]).map(mapHomeVisit),
-  );
+  const items = ((data ?? []) as HomeVisitListRow[]).map(mapHomeVisit);
   const totalItems = count ?? 0;
   return {
     items,
@@ -159,14 +127,27 @@ export async function createHomeVisit(
     file,
     folder: `home-visits/${values.visitDate || "undated"}`,
   });
-  const documentationUrl =
-    (await createSignedFileUrl(HOME_VISIT_BUCKET, documentationPath)) ?? "";
 
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("home_visits")
-    .insert(mapHomeVisitPayload(values, documentationPath, documentationUrl) as never)
-    .select("*")
+    .insert(
+      {
+        visit_date: values.visitDate,
+        student_id: values.studentId || null,
+        student_name: values.studentName,
+        parent_name: values.parentName,
+        class_name: values.className,
+        address: values.address,
+        visit_result: values.visitResult,
+        follow_up: values.followUp,
+        documentation_path: documentationPath,
+        documentation_file_name: file.name,
+        documentation_mime_type: file.type,
+        documentation_file_size: file.size,
+      } as never,
+    )
+    .select(HOME_VISIT_LIST_COLUMNS)
     .single();
 
   if (error) {

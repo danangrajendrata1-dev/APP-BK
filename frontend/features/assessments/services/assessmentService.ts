@@ -1,9 +1,5 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import {
-  createSignedFileUrl,
-  uploadPrivateFile,
-  validateUploadedFile,
-} from "@/lib/supabase/storage";
+import { uploadPrivateFile, validateUploadedFile } from "@/lib/supabase/storage";
 import { buildSupabaseErrorMessage, logSupabaseError } from "@/lib/supabase/error";
 import type { Database } from "@/types/database";
 
@@ -33,39 +29,19 @@ type AssessmentListRow = Pick<
   AssessmentRow,
   "id" | "title" | "assessment_type" | "file_path" | "description" | "updated_at"
 >;
-type AssessmentInsert = Database["public"]["Tables"]["assessment_files"]["Insert"];
 
 function normalizeText(value: string | null | undefined) {
   return value ?? "";
 }
 
-async function mapAssessment(row: AssessmentListRow): Promise<AssessmentFileItem> {
-  const filePath = normalizeText(row.file_path);
-  const fileUrl = filePath
-    ? ((await createSignedFileUrl(ASSESSMENT_BUCKET, filePath)) ?? "")
-    : "";
-
+function mapAssessment(row: AssessmentListRow): AssessmentFileItem {
   return {
     id: row.id,
     title: row.title,
     assessmentType: row.assessment_type,
-    filePath,
-    fileUrl,
+    filePath: normalizeText(row.file_path),
     description: normalizeText(row.description),
     updatedAt: row.updated_at,
-  };
-}
-
-function mapAssessmentPayload(
-  values: AssessmentFormValues,
-  filePath: string,
-  fileUrl: string,
-): AssessmentInsert {
-  return {
-    title: values.assessmentType,
-    assessment_type: values.assessmentType,
-    file_path: filePath,
-    file_url: fileUrl || null,
   };
 }
 
@@ -80,7 +56,7 @@ export async function getAssessments(
   const to = from + pageSize - 1;
 
   let query = supabase
-    .from("v_assessment_files_with_relations" as never)
+    .from("assessment_files")
     .select(ASSESSMENT_LIST_COLUMNS, { count: "exact" })
     .order("updated_at", { ascending: false })
     .range(from, to);
@@ -101,9 +77,7 @@ export async function getAssessments(
     );
   }
 
-  const items = await Promise.all(
-    ((data ?? []) as AssessmentListRow[]).map(mapAssessment),
-  );
+  const items = ((data ?? []) as AssessmentListRow[]).map(mapAssessment);
   const totalItems = count ?? 0;
   return {
     items,
@@ -131,13 +105,22 @@ export async function createAssessment(
     file,
     folder: `assessments/${values.assessmentType}`,
   });
-  const fileUrl = (await createSignedFileUrl(ASSESSMENT_BUCKET, filePath)) ?? "";
 
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("assessment_files")
-    .insert(mapAssessmentPayload(values, filePath, fileUrl) as never)
-    .select("*")
+    .insert(
+      {
+        title: values.assessmentType,
+        assessment_type: values.assessmentType,
+        file_path: filePath,
+        file_name: file.name,
+        mime_type: file.type,
+        file_size: file.size,
+        description: null,
+      } as never,
+    )
+    .select(ASSESSMENT_LIST_COLUMNS)
     .single();
 
   if (error) {

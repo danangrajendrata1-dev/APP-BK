@@ -12,7 +12,7 @@ import type {
 const DEFAULT_PAGE = 1;
 const DEFAULT_PAGE_SIZE = 20;
 const BK_SERVICE_ATTENDANCE_LIST_COLUMNS =
-  "id, visit_date, student_id, student_name, class_name, purpose, description, result, follow_up, signature";
+  "id, visit_date, student_id, student_name, class_name, purpose, description, result, follow_up, signature, created_at, updated_at";
 
 type BkServiceAttendanceRow =
   Database["public"]["Tables"]["bk_service_attendance"]["Row"];
@@ -28,6 +28,8 @@ type BkServiceAttendanceListRow = Pick<
   | "result"
   | "follow_up"
   | "signature"
+  | "created_at"
+  | "updated_at"
 >;
 type BkServiceAttendanceInsert =
   Database["public"]["Tables"]["bk_service_attendance"]["Insert"];
@@ -66,8 +68,8 @@ function mapBkServiceAttendance(
     result: normalizeText(row.result),
     followUp: normalizeText(row.follow_up),
     signature: normalizeText(row.signature),
-    createdAt: "",
-    updatedAt: "",
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
   };
 }
 
@@ -98,7 +100,7 @@ export async function getBkServiceAttendances(
   const to = from + pageSize - 1;
 
   let query = supabase
-    .from("v_bk_service_attendance_with_relations" as never)
+    .from("bk_service_attendance")
     .select(BK_SERVICE_ATTENDANCE_LIST_COLUMNS, { count: "exact" })
     .order("visit_date", { ascending: false })
     .range(from, to);

@@ -1,5 +1,3 @@
-import Link from "next/link";
-
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card";
 import { EmptyState } from "@/components/shared/EmptyState";
@@ -49,10 +47,10 @@ export function AssessmentTable({ result, queryString }: Props) {
                   <TableCell>{fileItem ? "Tersedia" : "Belum tersedia"}</TableCell>
                   <TableCell>{fileItem?.updatedAt ? new Date(fileItem.updatedAt).toLocaleString("id-ID") : "-"}</TableCell>
                   <TableCell>
-                    {fileItem?.fileUrl ? (
-                      <Link href={fileItem.fileUrl} target="_blank" className="font-medium text-slate-900 underline underline-offset-4">
+                    {fileItem?.filePath ? (
+                      <Button href={`/assessments/open/${fileItem.id}`} variant="outline" size="sm">
                         Lihat / Download
-                      </Link>
+                      </Button>
                     ) : (
                       "-"
                     )}

@@ -141,7 +141,8 @@ export async function getStudents(
     .select(STUDENT_LIST_PAGE_COLUMNS, { count: "exact" })
     .order("full_name", { ascending: true })
     .range(from, to)
-    .eq("class_name", filters.className);
+    .eq("class_name", filters.className)
+    .is("deleted_at", null);
 
   if (filters.status) {
     query = query.eq("status", filters.status);
@@ -197,6 +198,7 @@ export async function getStudentById(id: string): Promise<Student | null> {
     .from("students")
     .select(STUDENT_DETAIL_COLUMNS)
     .eq("id", id)
+    .is("deleted_at", null)
     .maybeSingle();
 
   if (error) {

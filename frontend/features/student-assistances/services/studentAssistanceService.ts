@@ -173,7 +173,7 @@ export async function createStudentAssistance(
   const { data, error } = await supabase
     .from("student_assistances")
     .insert(mapAssistancePayload(values) as never)
-    .select("*")
+    .select(STUDENT_ASSISTANCE_LIST_COLUMNS)
     .single();
   if (error) {
     logSupabaseError("[StudentAssistances] createStudentAssistance", error, {

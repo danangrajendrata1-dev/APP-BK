@@ -15,7 +15,6 @@ export type HomeVisitItem = {
   visitResult: string;
   followUp: string;
   documentationPath: string;
-  documentationUrl: string;
 };
 
 export type HomeVisitFilters = {

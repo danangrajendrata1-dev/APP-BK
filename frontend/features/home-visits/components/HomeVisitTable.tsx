@@ -1,5 +1,3 @@
-import Link from "next/link";
-
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card";
 import { EmptyState } from "@/components/shared/EmptyState";
@@ -49,13 +47,13 @@ export function HomeVisitTable({ result, queryString }: Props) {
                 <TableCell>{item.visitResult}</TableCell>
                 <TableCell>{item.followUp}</TableCell>
                 <TableCell>
-                  {item.documentationUrl ? (
-                    <Link href={item.documentationUrl} target="_blank" className="font-medium text-slate-900 underline underline-offset-4">
-                      Buka File
-                    </Link>
-                  ) : (
-                    "-"
-                  )}
+                    {item.documentationPath ? (
+                      <Button href={`/home-visits/open/${item.id}`} variant="outline" size="sm">
+                        Buka File
+                      </Button>
+                    ) : (
+                      "-"
+                    )}
                 </TableCell>
               </TableRow>
             ))}

@@ -36,6 +36,7 @@ export type Database = {
       students: {
         Row: {
           id: string;
+          user_id: string | null;
           nisn: string;
           full_name: string;
           gender: string;
@@ -45,11 +46,13 @@ export type Database = {
           phone: string | null;
           parent_name: string | null;
           status: "Aktif" | "Lulus" | "Pindah" | "Off";
+          deleted_at: string | null;
           created_at: string;
           updated_at: string;
         };
         Insert: {
           id?: string;
+          user_id?: string | null;
           nisn: string;
           full_name: string;
           gender: string;
@@ -59,11 +62,13 @@ export type Database = {
           phone?: string | null;
           parent_name?: string | null;
           status?: "Aktif" | "Lulus" | "Pindah" | "Off";
+          deleted_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
         Update: {
           id?: string;
+          user_id?: string | null;
           nisn?: string;
           full_name?: string;
           gender?: string;
@@ -73,6 +78,7 @@ export type Database = {
           phone?: string | null;
           parent_name?: string | null;
           status?: "Aktif" | "Lulus" | "Pindah" | "Off";
+          deleted_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -414,37 +420,103 @@ export type Database = {
         };
         Relationships: [];
       };
-      documents: {
+      bk_documents: {
         Row: {
           id: string;
           title: string;
+          description: string | null;
           file_path: string;
           file_name: string;
           mime_type: string;
           file_size: number;
-          description: string | null;
           created_at: string;
           updated_at: string;
         };
         Insert: {
           id?: string;
           title: string;
+          description?: string | null;
           file_path: string;
           file_name: string;
           mime_type: string;
           file_size: number;
-          description?: string | null;
           created_at?: string;
           updated_at?: string;
         };
         Update: {
           id?: string;
           title?: string;
-          file_path?: string | null;
+          description?: string | null;
+          file_path?: string;
           file_name?: string;
           mime_type?: string;
           file_size?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      digital_confessions: {
+        Row: {
+          id: string;
+          confession_date: string;
+          user_id: string | null;
+          student_id: string | null;
+          student_name: string | null;
+          class_name: string | null;
+          category:
+            | "Pribadi"
+            | "Sosial"
+            | "Belajar"
+            | "Karier"
+            | "Keluarga"
+            | "Lainnya";
+          content: string;
+          description: string | null;
+          status: string | null;
+          deleted_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          confession_date?: string;
+          user_id?: string | null;
+          student_id?: string | null;
+          student_name?: string | null;
+          class_name?: string | null;
+          category:
+            | "Pribadi"
+            | "Sosial"
+            | "Belajar"
+            | "Karier"
+            | "Keluarga"
+            | "Lainnya";
+          content: string;
           description?: string | null;
+          status?: string | null;
+          deleted_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          confession_date?: string;
+          user_id?: string | null;
+          student_id?: string | null;
+          student_name?: string | null;
+          class_name?: string | null;
+          category?:
+            | "Pribadi"
+            | "Sosial"
+            | "Belajar"
+            | "Karier"
+            | "Keluarga"
+            | "Lainnya";
+          content?: string;
+          description?: string | null;
+          status?: string | null;
+          deleted_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };

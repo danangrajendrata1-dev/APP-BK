@@ -1,5 +1,3 @@
-import Link from "next/link";
-
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/shared/EmptyState";
 import type { DocumentListResult } from "@/features/documents/types/document";
@@ -66,15 +64,14 @@ export function DocumentTable({ result }: Props) {
                     <p className="whitespace-pre-wrap leading-5 text-slate-700">
                       {item.description || "Preview belum tersedia"}
                     </p>
-                    {item.fileUrl ? (
-                      <Link
-                        href={item.fileUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex text-xs font-medium text-slate-900 underline underline-offset-4"
+                    {item.filePath ? (
+                      <Button
+                        href={`/documents/open/${item.id}`}
+                        variant="outline"
+                        size="sm"
                       >
                         Buka dokumen
-                      </Link>
+                      </Button>
                     ) : (
                       <p className="text-xs text-slate-500">Preview belum tersedia</p>
                     )}
