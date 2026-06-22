@@ -38,7 +38,7 @@ export const APP_NAV_ITEMS: AppNavItem[] = [
     href: "/student-assistances",
   },
   {
-    label: "Daftar Pendampingan Siswa Per Kelas",
+    label: "Rekapan Pelanggaran Siswa",
     href: "/class-assistances",
   },
   { label: "Surat & Dokumen", href: "/documents" },

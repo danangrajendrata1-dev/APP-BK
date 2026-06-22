@@ -1,33 +1,55 @@
 import {
-  COUNSELING_MEDIA_OPTIONS,
-  COUNSELING_TYPE_OPTIONS,
-} from "@/lib/constants/options";
-import {
   BASIC_VALIDATION_RULES,
-  type CounselingMedia,
   type CounselingRecordFormValues,
-  type CounselingType,
 } from "@/types/common";
 
 import type {
   CounselingRecordFormErrors,
   CounselingRecordFormState,
+  CounselingRecordCode,
 } from "@/features/counseling-records/types/counselingRecord";
 
-const MEDIA_VALUES = new Set(COUNSELING_MEDIA_OPTIONS.map((item) => item.value));
-const TYPE_VALUES = new Set(COUNSELING_TYPE_OPTIONS.map((item) => item.value));
+export const VIOLATION_CODE_OPTIONS: Array<{
+  label: string;
+  value: CounselingRecordCode;
+}> = [
+  { label: "T - Terlambat", value: "T" },
+  { label: "S - Tak Seragam", value: "S" },
+  { label: "D - Tidak Memakai ID", value: "D" },
+  { label: "R - Rambut Panjang / Semir", value: "R" },
+  { label: "RK - Rokok", value: "RK" },
+  { label: "K - Korek", value: "K" },
+  { label: "M - Makeup Menor", value: "M" },
+  { label: "L - Lainnya", value: "L" },
+];
+
+export const MONTH_OPTIONS = [
+  { label: "1 - Januari", value: "1" },
+  { label: "2 - Februari", value: "2" },
+  { label: "3 - Maret", value: "3" },
+  { label: "4 - April", value: "4" },
+  { label: "5 - Mei", value: "5" },
+  { label: "6 - Juni", value: "6" },
+  { label: "7 - Juli", value: "7" },
+  { label: "8 - Agustus", value: "8" },
+  { label: "9 - September", value: "9" },
+  { label: "10 - Oktober", value: "10" },
+  { label: "11 - November", value: "11" },
+  { label: "12 - Desember", value: "12" },
+];
+
+const VALID_VIOLATION_CODES = new Set(VIOLATION_CODE_OPTIONS.map((item) => item.value));
+const YEAR_MIN = 2000;
+const YEAR_MAX = 2100;
 
 export const EMPTY_COUNSELING_RECORD_FORM_VALUES: CounselingRecordFormValues = {
-  counselingDate: "",
   studentId: "",
   studentName: "",
   className: "",
-  meetingNumber: undefined,
-  media: "Offline",
-  counselingType: "Individu",
-  topic: "",
-  counselingResult: "",
-  followUp: "",
+  violationCode: "",
+  violationDay: "",
+  violationMonth: "",
+  violationYear: "",
   description: "",
 };
 
@@ -42,22 +64,26 @@ function getTextValue(formData: FormData, fieldName: string) {
   return String(formData.get(fieldName) ?? "").trim();
 }
 
+function toPositiveInteger(value: string) {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : undefined;
+}
+
+function getDaysInMonth(year: number, month: number) {
+  return new Date(year, month, 0).getDate();
+}
+
 export function parseCounselingRecordFormData(
   formData: FormData,
 ): CounselingRecordFormValues {
-  const meetingNumberValue = getTextValue(formData, "meetingNumber");
   return {
-    counselingDate: getTextValue(formData, "counselingDate"),
     studentId: getTextValue(formData, "studentId"),
     studentName: getTextValue(formData, "studentName"),
     className: getTextValue(formData, "className"),
-    meetingNumber: meetingNumberValue ? Number(meetingNumberValue) : undefined,
-    media: (getTextValue(formData, "media") || "Offline") as CounselingMedia,
-    counselingType: (getTextValue(formData, "counselingType") ||
-      "Individu") as CounselingType,
-    topic: getTextValue(formData, "topic"),
-    counselingResult: getTextValue(formData, "counselingResult"),
-    followUp: getTextValue(formData, "followUp"),
+    violationCode: getTextValue(formData, "violationCode").toUpperCase(),
+    violationDay: getTextValue(formData, "violationDay"),
+    violationMonth: getTextValue(formData, "violationMonth"),
+    violationYear: getTextValue(formData, "violationYear"),
     description: getTextValue(formData, "description"),
   };
 }
@@ -66,27 +92,47 @@ export function validateCounselingRecordForm(
   values: CounselingRecordFormValues,
 ): CounselingRecordFormErrors {
   const errors: CounselingRecordFormErrors = {};
+  const day = toPositiveInteger(values.violationDay);
+  const month = toPositiveInteger(values.violationMonth);
+  const year = toPositiveInteger(values.violationYear);
 
-  if (!values.counselingDate) errors.counselingDate = BASIC_VALIDATION_RULES.required;
   if (!values.studentId) errors.studentId = "Pilih siswa terlebih dahulu";
   if (!values.studentName) errors.studentName = "Nama siswa belum terisi";
   if (!values.className) errors.className = "Kelas belum terisi";
-  if (!values.meetingNumber || values.meetingNumber < 1) {
-    errors.meetingNumber = "Pertemuan ke- minimal 1";
+  if (!values.violationCode) {
+    errors.violationCode = BASIC_VALIDATION_RULES.required;
+  } else if (!VALID_VIOLATION_CODES.has(values.violationCode as CounselingRecordCode)) {
+    errors.violationCode = "Kode pelanggaran tidak valid";
   }
-  if (!values.media) {
-    errors.media = BASIC_VALIDATION_RULES.required;
-  } else if (!MEDIA_VALUES.has(values.media)) {
-    errors.media = "Media konseling tidak valid";
+
+  if (!values.violationDay) {
+    errors.violationDay = BASIC_VALIDATION_RULES.required;
+  } else if (!day || day < 1 || day > 31) {
+    errors.violationDay = "Tanggal tidak valid";
   }
-  if (!values.counselingType) {
-    errors.counselingType = BASIC_VALIDATION_RULES.required;
-  } else if (!TYPE_VALUES.has(values.counselingType)) {
-    errors.counselingType = "Jenis konseling tidak valid";
+
+  if (!values.violationMonth) {
+    errors.violationMonth = BASIC_VALIDATION_RULES.required;
+  } else if (!month || month < 1 || month > 12) {
+    errors.violationMonth = "Bulan tidak valid";
   }
-  if (!values.topic) errors.topic = BASIC_VALIDATION_RULES.required;
-  if (!values.counselingResult) errors.counselingResult = BASIC_VALIDATION_RULES.required;
-  if (!values.followUp) errors.followUp = BASIC_VALIDATION_RULES.required;
+
+  if (!values.violationYear) {
+    errors.violationYear = BASIC_VALIDATION_RULES.required;
+  } else if (!year || year < YEAR_MIN || year > YEAR_MAX) {
+    errors.violationYear = "Tahun tidak valid";
+  }
+
+  if (day && month && year) {
+    const daysInMonth = getDaysInMonth(year, month);
+    if (day > daysInMonth) {
+      errors.violationDay = "Tanggal tidak valid untuk bulan dan tahun terpilih";
+    }
+  }
+
+  if (values.description.length > BASIC_VALIDATION_RULES.maxTextareaLength) {
+    errors.description = "Keterangan terlalu panjang";
+  }
 
   return errors;
 }
@@ -95,9 +141,10 @@ export function createCounselingRecordFormState(
   values: CounselingRecordFormValues,
   errors: CounselingRecordFormErrors = {},
   message = "",
+  status: CounselingRecordFormState["status"] = "error",
 ): CounselingRecordFormState {
   return {
-    status: "error",
+    status,
     message,
     errors,
     values,

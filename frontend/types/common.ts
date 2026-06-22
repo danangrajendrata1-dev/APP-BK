@@ -3,8 +3,6 @@ import type {
   ASSISTANCE_CODE_OPTIONS,
   BK_SERVICE_PURPOSE_OPTIONS,
   CONFESSION_CATEGORY_OPTIONS,
-  COUNSELING_MEDIA_OPTIONS,
-  COUNSELING_TYPE_OPTIONS,
   DOCUMENT_TYPE_OPTIONS,
   ROLE_OPTIONS,
   SCHOOL_ATTENDANCE_STATUS_OPTIONS,
@@ -19,10 +17,6 @@ export type SchoolAttendanceStatus =
   (typeof SCHOOL_ATTENDANCE_STATUS_OPTIONS)[number]["value"];
 export type BkServicePurpose =
   (typeof BK_SERVICE_PURPOSE_OPTIONS)[number]["value"];
-export type CounselingMedia =
-  (typeof COUNSELING_MEDIA_OPTIONS)[number]["value"];
-export type CounselingType =
-  (typeof COUNSELING_TYPE_OPTIONS)[number]["value"];
 export type AssistanceCode =
   (typeof ASSISTANCE_CODE_OPTIONS)[number]["value"];
 export type DocumentType = (typeof DOCUMENT_TYPE_OPTIONS)[number]["value"];
@@ -106,16 +100,13 @@ export type BkServiceAttendanceFormValues = {
 };
 
 export type CounselingRecordFormValues = {
-  counselingDate: string;
-  studentId?: string;
+  studentId: string;
   studentName: string;
   className: string;
-  meetingNumber?: number;
-  media: CounselingMedia;
-  counselingType: CounselingType;
-  topic: string;
-  counselingResult: string;
-  followUp: string;
+  violationCode: string;
+  violationDay: string;
+  violationMonth: string;
+  violationYear: string;
   description: string;
 };
 

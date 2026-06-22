@@ -1,289 +1,465 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { buildSupabaseErrorMessage, logSupabaseError } from "@/lib/supabase/error";
-import type { CounselingRecordFormValues } from "@/types/common";
+import { logSupabaseError } from "@/lib/supabase/error";
 import type { Database } from "@/types/database";
 
 import type {
-  CounselingRecordItem,
+  CounselingRecordCode,
+  CounselingRecordSheetFilters,
   CounselingRecordSheetResult,
-  CounselingRecordListQuery,
-  CounselingRecordListResult,
+  CounselingRecordSheetRow,
 } from "@/features/counseling-records/types/counselingRecord";
+import type { CounselingRecordFormValues } from "@/types/common";
 
-const DEFAULT_PAGE = 1;
-const DEFAULT_PAGE_SIZE = 20;
-const DAYS_IN_MONTH = 31;
-const COUNSELING_RECORD_LIST_COLUMNS =
-  "id, violation_date, student_id, student_name, class_name, violation_code, description, created_at, updated_at";
+const RAW_RECORD_LIMIT = 1000;
+const RECORD_COLUMNS =
+  "id, student_id, student_name, class_name, violation_code, description, violation_date, violation_year, violation_month, violation_day";
 
-type CounselingRow = Database["public"]["Tables"]["violation_records"]["Row"];
-type CounselingListRow = Pick<
-  CounselingRow,
+type ViolationRecordRow = Pick<
+  Database["public"]["Tables"]["violation_records"]["Row"],
   | "id"
-  | "violation_date"
   | "student_id"
   | "student_name"
   | "class_name"
   | "violation_code"
   | "description"
-  | "created_at"
-  | "updated_at"
->;
-type CounselingInsert = Database["public"]["Tables"]["violation_records"]["Insert"];
-type ViolationRecordRow = Database["public"]["Tables"]["violation_records"]["Row"];
-type ViolationSheetRow = Pick<
-  ViolationRecordRow,
-  | "id"
   | "violation_date"
-  | "student_id"
-  | "student_name"
-  | "class_name"
-  | "description"
+  | "violation_year"
+  | "violation_month"
+  | "violation_day"
 >;
+
+type GroupedStudentRow = {
+  id: string;
+  studentId: string;
+  studentName: string;
+  className: string;
+  previousCounts: Record<CounselingRecordCode, number>;
+  currentCounts: Record<CounselingRecordCode, number>;
+  dayValues: Record<number, Set<CounselingRecordCode>>;
+  description: string;
+  latestDate: string;
+};
+
+type ViolationInsert = Database["public"]["Tables"]["violation_records"]["Insert"];
+
+const VIOLATION_CODE_ORDER: CounselingRecordCode[] = [
+  "T",
+  "S",
+  "D",
+  "R",
+  "RK",
+  "K",
+  "M",
+  "L",
+];
 
 function normalizeText(value: string | null | undefined) {
-  return value ?? "";
+  return value?.trim() ?? "";
 }
 
-function createEmptyDays() {
-  return Array.from({ length: DAYS_IN_MONTH }, () => "");
+function normalizeViolationCode(
+  value: string | null | undefined,
+): CounselingRecordCode | "" {
+  const normalized = normalizeText(value).toUpperCase().replace(/\s+/g, "");
+
+  if (normalized === "RK") return "RK";
+  if ((VIOLATION_CODE_ORDER as string[]).includes(normalized)) {
+    return normalized as CounselingRecordCode;
+  }
+
+  return "";
 }
 
-function getDateValue(value: string) {
-  return new Date(`${value}T00:00:00`);
+function resolveViolationCode(
+  value: string | null | undefined,
+  description: string | null | undefined,
+): CounselingRecordCode {
+  const normalizedCode = normalizeViolationCode(value);
+  if (normalizedCode) {
+    return normalizedCode;
+  }
+
+  const normalizedDescription = normalizeText(description).toLowerCase();
+  if (normalizedDescription.includes("terlambat")) return "T";
+  if (
+    normalizedDescription.includes("tak seragam") ||
+    normalizedDescription.includes("tidak seragam") ||
+    normalizedDescription.includes("seragam")
+  ) {
+    return "S";
+  }
+  if (
+    normalizedDescription.includes("id card") ||
+    normalizedDescription.includes("idcard") ||
+    normalizedDescription.includes("tidak memakai id") ||
+    normalizedDescription.includes("kartu identitas") ||
+    normalizedDescription.includes("identitas")
+  ) {
+    return "D";
+  }
+  if (
+    normalizedDescription.includes("rambut panjang") ||
+    normalizedDescription.includes("rambut") ||
+    normalizedDescription.includes("semir") ||
+    normalizedDescription.includes("cat rambut")
+  ) {
+    return "R";
+  }
+  if (normalizedDescription.includes("rokok")) return "RK";
+  if (normalizedDescription.includes("korek")) return "K";
+  if (
+    normalizedDescription.includes("makeup") ||
+    normalizedDescription.includes("make up") ||
+    normalizedDescription.includes("menor")
+  ) {
+    return "M";
+  }
+
+  return "L";
 }
 
-function mapCounselingRecord(row: CounselingListRow): CounselingRecordItem {
+function createEmptyCounts(): Record<CounselingRecordCode, number> {
+  return VIOLATION_CODE_ORDER.reduce(
+    (acc, code) => {
+      acc[code] = 0;
+      return acc;
+    },
+    {} as Record<CounselingRecordCode, number>,
+  );
+}
+
+function createEmptyDayValues(): Record<number, Set<CounselingRecordCode>> {
+  return Array.from({ length: 31 }, (_, index) => index + 1).reduce(
+    (acc, day) => {
+      acc[day] = new Set<CounselingRecordCode>();
+      return acc;
+    },
+    {} as Record<number, Set<CounselingRecordCode>>,
+  );
+}
+
+function getStudentKey(row: {
+  studentId: string;
+  studentName: string;
+  className: string;
+}) {
+  if (row.studentId) {
+    return `id:${row.studentId}`;
+  }
+
+  return `name:${row.studentName.toLowerCase().trim()}|class:${row.className
+    .toLowerCase()
+    .trim()}`;
+}
+
+function getFallbackStudentKey(row: {
+  studentName: string;
+  className: string;
+}) {
+  return `name:${row.studentName.toLowerCase().trim()}|class:${row.className
+    .toLowerCase()
+    .trim()}`;
+}
+
+function mergeSummaryText(current: string, next: string | null | undefined) {
+  const nextText = normalizeText(next);
+  if (!nextText) {
+    return current;
+  }
+
+  if (!current) {
+    return nextText;
+  }
+
+  const uniqueValues = [...new Set([current, nextText])];
+  if (uniqueValues.length === 1) {
+    return uniqueValues[0];
+  }
+
+  return `${uniqueValues.slice(0, 2).join(", ")}${uniqueValues.length > 2 ? "..." : ""}`;
+}
+
+function formatSummary(counts: Record<CounselingRecordCode, number>) {
+  const parts = VIOLATION_CODE_ORDER.filter((code) => counts[code] > 0).map(
+    (code) => `${code}${counts[code]}`,
+  );
+  return parts.length ? parts.join(" ") : "-";
+}
+
+function formatDayValues(values: Set<CounselingRecordCode>) {
+  if (!values.size) {
+    return "";
+  }
+
+  return VIOLATION_CODE_ORDER.filter((code) => values.has(code)).join(", ");
+}
+
+function formatMonthStartDate(year: number, month: number) {
+  return `${year}-${String(month).padStart(2, "0")}-01`;
+}
+
+function buildGroupedRow(classNameFallback: string): GroupedStudentRow {
+  return {
+    id: "",
+    studentId: "",
+    studentName: "",
+    className: classNameFallback,
+    previousCounts: createEmptyCounts(),
+    currentCounts: createEmptyCounts(),
+    dayValues: createEmptyDayValues(),
+    description: "",
+    latestDate: "",
+  };
+}
+
+function mapGroupedRow(row: GroupedStudentRow): CounselingRecordSheetRow {
   return {
     id: row.id,
-    counselingDate: row.violation_date,
-    studentId: row.student_id ?? "",
-    studentName: row.student_name,
-    className: row.class_name,
-    meetingNumber: null,
-    media: "Offline",
-    counselingType: "Individu",
-    topic: normalizeText(row.violation_code),
-    counselingResult: "",
-    followUp: "",
-    description: normalizeText(row.description),
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
+    studentId: row.studentId,
+    studentName: row.studentName,
+    className: row.className,
+    previousSummary: formatSummary(row.previousCounts),
+    days: Array.from({ length: 31 }, (_, index) =>
+      formatDayValues(row.dayValues[index + 1]),
+    ),
+    currentSummary: formatSummary(row.currentCounts),
+    description: normalizeText(row.description) || "-",
   };
 }
 
-function mapCounselingPayload(
-  values: CounselingRecordFormValues,
-): CounselingInsert {
-  const counselingDate = new Date(`${values.counselingDate}T00:00:00`);
-  return {
-    violation_date: values.counselingDate,
-    violation_year: counselingDate.getFullYear(),
-    violation_month: counselingDate.getMonth() + 1,
-    violation_day: counselingDate.getDate(),
-    student_id: values.studentId || "",
-    student_name: values.studentName,
-    class_name: values.className,
-    violation_code: values.topic || null,
-    description: values.description || null,
-  };
+function toGroupedRow(
+  row: ViolationRecordRow,
+  classNameFallback: string,
+  groupedMap: Map<string, GroupedStudentRow>,
+) {
+  const studentName = normalizeText(row.student_name) || "-";
+  const className = normalizeText(row.class_name) || classNameFallback;
+  const studentId = normalizeText(row.student_id);
+  const key = getStudentKey({
+    studentId,
+    studentName,
+    className,
+  });
+  const fallbackKey = getFallbackStudentKey({
+    studentName,
+    className,
+  });
+
+  const existing =
+    groupedMap.get(key) ??
+    groupedMap.get(fallbackKey) ??
+    buildGroupedRow(classNameFallback);
+
+  const code = resolveViolationCode(row.violation_code, row.description);
+  const day = Number(row.violation_day);
+  const rowDescription = normalizeText(row.description);
+
+  if (!existing.id || (studentId && existing.studentId.startsWith("name:"))) {
+    existing.id = key;
+    existing.studentId = studentId || existing.studentId || key;
+    existing.studentName = studentName;
+    existing.className = className;
+  }
+
+  groupedMap.set(key, existing);
+  groupedMap.set(fallbackKey, existing);
+
+  if (row.violation_date >= existing.latestDate) {
+    existing.latestDate = row.violation_date;
+  }
+
+  if (rowDescription) {
+    existing.description = mergeSummaryText(existing.description, rowDescription);
+  }
+
+  if (day >= 1 && day <= 31) {
+    existing.dayValues[day].add(code);
+  }
+
+  return { existing, code, key };
 }
 
-export async function getCounselingRecords(
-  params: Partial<CounselingRecordListQuery> = {},
-): Promise<CounselingRecordListResult> {
-  const supabase = await createSupabaseServerClient();
-  const page = Math.max(params.page ?? DEFAULT_PAGE, 1);
-  const pageSize = Math.max(params.pageSize ?? DEFAULT_PAGE_SIZE, 1);
-  const filters = params.filters ?? {};
-  const from = (page - 1) * pageSize;
-  const to = from + pageSize - 1;
-
-  let query = supabase
-    .from("violation_records")
-    .select(COUNSELING_RECORD_LIST_COLUMNS, { count: "exact" })
-    .order("violation_date", { ascending: false })
-    .range(from, to);
-
-  if (filters.month) {
-    query = query.gte(
-      "violation_date",
-      `${filters.year ?? new Date().getFullYear()}-${String(filters.month).padStart(2, "0")}-01`,
-    );
-    const monthEnd = new Date(filters.year ?? new Date().getFullYear(), filters.month, 0)
-      .toISOString()
-      .slice(0, 10);
-    query = query.lte("violation_date", monthEnd);
-  } else if (filters.year) {
-    query = query.gte("violation_date", `${filters.year}-01-01`);
-    query = query.lte("violation_date", `${filters.year}-12-31`);
-  }
-  if (filters.className) query = query.ilike("class_name", `%${filters.className}%`);
-
-  const { data, count, error } = await query;
-  if (error) {
-    logSupabaseError("[CounselingRecords] getCounselingRecords", error, {
-      page,
-      pageSize,
-      filters,
-    });
-    throw new Error(
-      buildSupabaseErrorMessage("Gagal memuat catatan pelanggaran", error),
-    );
-  }
-
-  const totalItems = count ?? 0;
+function buildEmptyResult(
+  filters: CounselingRecordSheetFilters,
+): CounselingRecordSheetResult {
   return {
-    items: ((data ?? []) as CounselingListRow[]).map(mapCounselingRecord),
+    items: [],
     filters,
-    pagination: {
-      page,
-      pageSize,
-      totalItems,
-      totalPages: Math.max(1, Math.ceil(totalItems / pageSize)),
-    },
+    month: filters.month,
+    year: filters.year,
   };
 }
 
-export async function createCounselingRecord(
-  values: CounselingRecordFormValues,
-): Promise<CounselingRecordItem> {
+function normalizeSheetFilters(
+  filters: Partial<CounselingRecordSheetFilters> = {},
+): CounselingRecordSheetFilters {
+  return {
+    className: normalizeText(filters.className) || undefined,
+    month:
+      typeof filters.month === "number" && filters.month >= 1 && filters.month <= 12
+        ? filters.month
+        : undefined,
+    year:
+      typeof filters.year === "number" && filters.year >= 2000 && filters.year <= 2100
+        ? filters.year
+        : undefined,
+  };
+}
+
+export async function fetchViolationRecordsForMonth(
+  filters: CounselingRecordSheetFilters,
+): Promise<ViolationRecordRow[]> {
   const supabase = await createSupabaseServerClient();
+  const { className, month, year } = filters;
+
+  if (!className || !month || !year) {
+    return [];
+  }
+
   const { data, error } = await supabase
     .from("violation_records")
-    .insert(mapCounselingPayload(values) as never)
-    .select(COUNSELING_RECORD_LIST_COLUMNS)
+    .select(RECORD_COLUMNS)
+    .eq("class_name", className)
+    .eq("violation_year", year)
+    .eq("violation_month", month)
+    .order("violation_day", { ascending: true })
+    .order("student_name", { ascending: true })
+    .range(0, RAW_RECORD_LIMIT - 1);
+
+  if (error) {
+    logSupabaseError("[CounselingRecords] fetchViolationRecordsForMonth", error, {
+      className,
+      month,
+      year,
+    });
+    throw new Error("Gagal memuat data catatan pelanggaran.");
+  }
+
+  return (data ?? []) as ViolationRecordRow[];
+}
+
+export async function fetchPreviousViolationRecords(
+  filters: CounselingRecordSheetFilters,
+): Promise<ViolationRecordRow[]> {
+  const supabase = await createSupabaseServerClient();
+  const { className, month, year } = filters;
+
+  if (!className || !month || !year) {
+    return [];
+  }
+
+  const monthStartDate = formatMonthStartDate(year, month);
+
+  const { data, error } = await supabase
+    .from("violation_records")
+    .select(RECORD_COLUMNS)
+    .eq("class_name", className)
+    .lt("violation_date", monthStartDate)
+    .order("violation_date", { ascending: true })
+    .order("student_name", { ascending: true })
+    .range(0, RAW_RECORD_LIMIT - 1);
+
+  if (error) {
+    logSupabaseError("[CounselingRecords] fetchPreviousViolationRecords", error, {
+      className,
+      month,
+      year,
+      monthStartDate,
+    });
+    throw new Error("Gagal memuat riwayat catatan pelanggaran.");
+  }
+
+  return (data ?? []) as ViolationRecordRow[];
+}
+
+export async function insertViolationRecord(
+  values: CounselingRecordFormValues,
+) {
+  const supabase = await createSupabaseServerClient();
+  const year = Number(values.violationYear);
+  const month = Number(values.violationMonth);
+  const day = Number(values.violationDay);
+  const violationDate = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+
+  const payload: ViolationInsert = {
+    student_id: values.studentId,
+    student_name: values.studentName,
+    class_name: values.className,
+    violation_code: values.violationCode,
+    description: values.description || null,
+    violation_day: day,
+    violation_month: month,
+    violation_year: year,
+    violation_date: violationDate,
+  };
+
+  const { data, error } = await supabase
+    .from("violation_records")
+    .insert(payload as never)
+    .select(RECORD_COLUMNS)
     .single();
 
   if (error) {
-    logSupabaseError("[CounselingRecords] createCounselingRecord", error, {
+    logSupabaseError("[CounselingRecords] insertViolationRecord", error, {
       studentId: values.studentId,
-      counselingDate: values.counselingDate,
+      studentName: values.studentName,
+      className: values.className,
+      violationCode: values.violationCode,
+      violationDate,
     });
-    throw new Error(
-      buildSupabaseErrorMessage("Gagal menyimpan catatan pelanggaran", error),
-    );
+    throw new Error("Gagal menyimpan catatan pelanggaran.");
   }
-  return mapCounselingRecord(data as CounselingListRow);
+
+  return data as ViolationRecordRow;
+}
+
+export async function createCounselingRecord(values: CounselingRecordFormValues) {
+  return insertViolationRecord(values);
 }
 
 export async function getCounselingRecordSheet(
-  _params: { month?: number; year?: number; page?: number } = {},
+  params: Partial<CounselingRecordSheetFilters> = {},
 ): Promise<CounselingRecordSheetResult> {
-  const supabase = await createSupabaseServerClient();
-  const month = _params.month ?? new Date().getMonth() + 1;
-  const year = _params.year ?? new Date().getFullYear();
-  const monthStart = new Date(year, month - 1, 1);
-  const monthEnd = new Date(year, month, 0);
+  const filters = normalizeSheetFilters(params);
 
-  const [studentsResult, violationResult] = await Promise.all([
-    supabase
-      .from("students")
-      .select("id, full_name, class_name")
-      .order("class_name", { ascending: true })
-      .order("full_name", { ascending: true })
-      .is("deleted_at", null),
-    supabase
-      .from("violation_records")
-      .select("id, violation_date, student_id, student_name, class_name, description")
-      .lte("violation_date", monthEnd.toISOString().slice(0, 10))
-      .gte("violation_date", `${year}-01-01`)
-      .order("violation_date", { ascending: true }),
+  if (!filters.className || !filters.month || !filters.year) {
+    return buildEmptyResult(filters);
+  }
+
+  const [previousRows, currentRows] = await Promise.all([
+    fetchPreviousViolationRecords(filters),
+    fetchViolationRecordsForMonth(filters),
   ]);
 
-  if (studentsResult.error) {
-    logSupabaseError("[CounselingRecords] getCounselingRecordSheet students", studentsResult.error, {
-      month,
-      year,
-    });
-    throw new Error(
-      buildSupabaseErrorMessage("Gagal memuat daftar siswa untuk catatan pelanggaran", studentsResult.error),
-    );
+  const groupedMap = new Map<string, GroupedStudentRow>();
+
+  for (const row of previousRows) {
+    const { existing, code } = toGroupedRow(row, filters.className, groupedMap);
+    existing.previousCounts[code] += 1;
   }
 
-  if (violationResult.error) {
-    logSupabaseError("[CounselingRecords] getCounselingRecordSheet violation_records", violationResult.error, {
-      month,
-      year,
-    });
-    throw new Error(
-      buildSupabaseErrorMessage("Gagal memuat catatan pelanggaran", violationResult.error),
-    );
+  for (const row of currentRows) {
+    const { existing, code } = toGroupedRow(row, filters.className, groupedMap);
+    existing.currentCounts[code] += 1;
+    const day = Number(row.violation_day);
+    if (day >= 1 && day <= 31) {
+      existing.dayValues[day].add(code);
+    }
   }
 
-  const students = ((studentsResult.data ?? []) as Array<{
-    id: string;
-    full_name: string;
-    class_name: string;
-  }>).map((student) => ({
-    id: student.id,
-    studentId: student.id,
-    studentName: student.full_name,
-    className: student.class_name,
-  }));
-
-  if (!students.length) {
-    return {
-      items: [],
-      month,
-      year,
-    };
-  }
-
-  const rows = (violationResult.data ?? []) as ViolationSheetRow[];
-  const recordsByStudent = new Map<string, ViolationSheetRow[]>();
-
-  for (const row of rows) {
-    const studentKey = row.student_id;
-    const existingRows = recordsByStudent.get(studentKey) ?? [];
-    existingRows.push(row);
-    recordsByStudent.set(studentKey, existingRows);
-  }
+  const items = [...groupedMap.values()]
+    .filter((item) =>
+      VIOLATION_CODE_ORDER.some(
+        (code) => item.previousCounts[code] > 0 || item.currentCounts[code] > 0,
+      ),
+    )
+    .sort((a, b) => a.studentName.localeCompare(b.studentName))
+    .map(mapGroupedRow);
 
   return {
-    items: students.map((student) => {
-      const studentRecords = recordsByStudent.get(student.studentId) ?? [];
-      const days = createEmptyDays();
-      let previousTotal = 0;
-      let total = 0;
-      let description = "";
-      const dayCounts = new Map<number, number>();
-
-      for (const record of studentRecords) {
-        const recordDate = getDateValue(record.violation_date);
-        const normalizedDescription = record.description?.trim() ?? "";
-
-        if (recordDate < monthStart) {
-          previousTotal += 1;
-        }
-
-        if (recordDate >= monthStart && recordDate <= monthEnd) {
-          const dayIndex = recordDate.getDate();
-          dayCounts.set(dayIndex, (dayCounts.get(dayIndex) ?? 0) + 1);
-          total += 1;
-          if (normalizedDescription) {
-            description = normalizedDescription;
-          }
-        }
-      }
-
-      for (let day = 1; day <= DAYS_IN_MONTH; day += 1) {
-        const count = dayCounts.get(day) ?? 0;
-        days[day - 1] = count > 0 ? String(count) : "";
-      }
-
-      return {
-        id: student.id,
-        studentId: student.studentId,
-        studentName: student.studentName,
-        className: student.className,
-        previousTotal,
-        days,
-        total,
-        description,
-      };
-    }),
-    month,
-    year,
+    items,
+    filters,
+    month: filters.month,
+    year: filters.year,
   };
 }

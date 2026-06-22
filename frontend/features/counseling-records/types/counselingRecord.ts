@@ -1,26 +1,23 @@
 import type {
-  CounselingMedia,
   CounselingRecordFormValues,
-  CounselingType,
   PaginationMeta,
   TableQueryParams,
 } from "@/types/common";
 
-export type CounselingRecordItem = {
-  id: string;
-  counselingDate: string;
-  studentId: string;
-  studentName: string;
-  className: string;
-  meetingNumber: number | null;
-  media: CounselingMedia;
-  counselingType: CounselingType;
-  topic: string;
-  counselingResult: string;
-  followUp: string;
-  description: string;
-  createdAt: string;
-  updatedAt: string;
+export type CounselingRecordCode =
+  | "T"
+  | "S"
+  | "D"
+  | "R"
+  | "RK"
+  | "K"
+  | "M"
+  | "L";
+
+export type CounselingRecordSheetFilters = {
+  className?: string;
+  month?: number;
+  year?: number;
 };
 
 export type CounselingRecordSheetRow = {
@@ -28,33 +25,27 @@ export type CounselingRecordSheetRow = {
   studentId: string;
   studentName: string;
   className: string;
-  previousTotal: number;
+  previousSummary: string;
   days: string[];
-  total: number;
+  currentSummary: string;
   description: string;
-};
-
-export type CounselingRecordFilters = {
-  month?: number;
-  year?: number;
-  className?: string;
-  media?: CounselingMedia;
-  counselingType?: CounselingType;
-};
-
-export type CounselingRecordListQuery =
-  TableQueryParams<CounselingRecordFilters>;
-
-export type CounselingRecordListResult = {
-  items: CounselingRecordItem[];
-  filters: CounselingRecordFilters;
-  pagination: PaginationMeta;
 };
 
 export type CounselingRecordSheetResult = {
   items: CounselingRecordSheetRow[];
-  month: number;
-  year: number;
+  filters: CounselingRecordSheetFilters;
+  month?: number;
+  year?: number;
+};
+
+export type CounselingRecordFilters = CounselingRecordSheetFilters;
+
+export type CounselingRecordListQuery = TableQueryParams<CounselingRecordFilters>;
+
+export type CounselingRecordListResult = {
+  items: CounselingRecordSheetRow[];
+  filters: CounselingRecordFilters;
+  pagination: PaginationMeta;
 };
 
 export type CounselingRecordFormErrors = Partial<
@@ -62,8 +53,16 @@ export type CounselingRecordFormErrors = Partial<
 >;
 
 export type CounselingRecordFormState = {
-  status: "idle" | "error";
+  status: "idle" | "error" | "success";
   message?: string;
   errors: CounselingRecordFormErrors;
   values: CounselingRecordFormValues;
 };
+
+export type CounselingRecordFormAction = (
+  state: CounselingRecordFormState,
+  formData: FormData,
+) => Promise<CounselingRecordFormState>;
+
+// Backwards-compatible aliases for any unused legacy imports.
+export type CounselingRecordItem = CounselingRecordSheetRow;

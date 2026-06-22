@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 import { ClassSearchSelect } from "@/components/shared/ClassSearchSelect";
 import {
@@ -12,32 +13,35 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
 import {
-  COUNSELING_MEDIA_OPTIONS,
-  COUNSELING_TYPE_OPTIONS,
-} from "@/lib/constants/options";
-import { INITIAL_COUNSELING_RECORD_FORM_STATE } from "@/features/counseling-records/schemas/counselingRecordSchema";
-import type { CounselingRecordFormState } from "@/features/counseling-records/types/counselingRecord";
+  EMPTY_COUNSELING_RECORD_FORM_VALUES,
+  INITIAL_COUNSELING_RECORD_FORM_STATE,
+  MONTH_OPTIONS,
+  VIOLATION_CODE_OPTIONS,
+} from "@/features/counseling-records/schemas/counselingRecordSchema";
+import type {
+  CounselingRecordFormAction,
+  CounselingRecordFormState,
+} from "@/features/counseling-records/types/counselingRecord";
 
-type Props = {
-  action: (
-    state: CounselingRecordFormState,
-    formData: FormData,
-  ) => Promise<CounselingRecordFormState>;
-};
-
-type CounselingRecordFormFieldsProps = {
-  formAction: (
-    formData: FormData,
-  ) => void;
-  isPending: boolean;
-  state: CounselingRecordFormState;
+type CounselingRecordFormProps = {
+  action: CounselingRecordFormAction;
+  initialValues?: Partial<typeof EMPTY_COUNSELING_RECORD_FORM_VALUES>;
+  isOpen: boolean;
+  onClose: () => void;
 };
 
 function CounselingRecordFormFields({
   formAction,
   isPending,
+  onClose,
   state,
-}: CounselingRecordFormFieldsProps) {
+}: {
+  formAction: (formData: FormData) => void;
+  isPending: boolean;
+  onClose: () => void;
+  state: CounselingRecordFormState;
+}) {
+  const router = useRouter();
   const [selectedClass, setSelectedClass] = useState(state.values.className ?? "");
   const [selectedStudent, setSelectedStudent] = useState<StudentSearchOption | null>(
     state.values.studentId
@@ -52,18 +56,34 @@ function CounselingRecordFormFields({
   const [classSearchKey, setClassSearchKey] = useState(0);
   const [studentSearchKey, setStudentSearchKey] = useState(0);
   const className = selectedStudent?.className ?? selectedClass;
-  const studentId = selectedStudent?.id ?? "";
-  const studentName = selectedStudent?.fullName ?? "";
+  const studentId = selectedStudent?.id ?? state.values.studentId ?? "";
+  const studentName = selectedStudent?.fullName ?? state.values.studentName ?? "";
+  const messageClass =
+    state.status === "success"
+      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+      : "border-rose-200 bg-rose-50 text-rose-700";
+
+  useEffect(() => {
+    if (state.status !== "success") {
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      router.refresh();
+      onClose();
+    }, 700);
+
+    return () => window.clearTimeout(timeout);
+  }, [onClose, router, state.status]);
 
   return (
     <form action={formAction} className="space-y-5">
       {state.message ? (
-        <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+        <div className={`rounded-2xl border px-4 py-3 text-sm ${messageClass}`}>
           {state.message}
         </div>
       ) : null}
       <div className="grid gap-5 md:grid-cols-2">
-        <Input type="date" name="counselingDate" label="Tanggal" defaultValue={state.values.counselingDate} error={state.errors.counselingDate} />
         <StudentSearchSelect
           key={`student-search-${studentSearchKey}`}
           label="Nama Siswa"
@@ -101,55 +121,115 @@ function CounselingRecordFormFields({
             }
           }}
         />
-        <Input type="number" min={1} name="meetingNumber" label="Pertemuan Ke-" defaultValue={state.values.meetingNumber ? String(state.values.meetingNumber) : ""} error={state.errors.meetingNumber} />
-        <Select name="media" label="Media" options={[...COUNSELING_MEDIA_OPTIONS]} defaultValue={state.values.media} error={state.errors.media} />
-        <Select name="counselingType" label="Jenis Konseling" options={[...COUNSELING_TYPE_OPTIONS]} defaultValue={state.values.counselingType} error={state.errors.counselingType} />
-        <Input name="topic" label="Topik" defaultValue={state.values.topic} error={state.errors.topic} />
+        <Select
+          name="violationCode"
+          label="Jenis Pelanggaran"
+          options={[...VIOLATION_CODE_OPTIONS]}
+          defaultValue={state.values.violationCode}
+          error={state.errors.violationCode}
+          placeholder="Pilih jenis pelanggaran"
+        />
+        <Input
+          type="number"
+          name="violationDay"
+          label="Tanggal"
+          min={1}
+          max={31}
+          defaultValue={state.values.violationDay}
+          error={state.errors.violationDay}
+        />
+        <Select
+          name="violationMonth"
+          label="Bulan"
+          options={[...MONTH_OPTIONS]}
+          defaultValue={state.values.violationMonth}
+          error={state.errors.violationMonth}
+          placeholder="Pilih bulan"
+        />
+        <Input
+          type="number"
+          name="violationYear"
+          label="Tahun"
+          min={2000}
+          max={2100}
+          defaultValue={state.values.violationYear}
+          error={state.errors.violationYear}
+        />
         <div className="md:col-span-2">
-          <Textarea name="counselingResult" label="Hasil Konseling" defaultValue={state.values.counselingResult} error={state.errors.counselingResult} rows={4} />
-        </div>
-        <div className="md:col-span-2">
-          <Textarea name="followUp" label="Tindak Lanjut" defaultValue={state.values.followUp} error={state.errors.followUp} rows={4} />
-        </div>
-        <div className="md:col-span-2">
-          <Textarea name="description" label="Keterangan" defaultValue={state.values.description} rows={4} />
+          <Textarea
+            name="description"
+            label="Keterangan"
+            defaultValue={state.values.description}
+            error={state.errors.description}
+            rows={4}
+          />
         </div>
       </div>
       <input type="hidden" name="studentId" value={studentId} />
       <input type="hidden" name="studentName" value={studentName} />
       <input type="hidden" name="className" value={className} />
-      <div className="flex justify-end">
-        <Button type="submit" isLoading={isPending}>Simpan Catatan Pelanggaran</Button>
+      <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+        <Button type="button" variant="outline" onClick={onClose}>
+          Batal
+        </Button>
+        <Button type="submit" isLoading={isPending} disabled={state.status === "success"}>
+          Simpan
+        </Button>
       </div>
     </form>
   );
 }
 
-export function CounselingRecordForm({ action }: Props) {
+export function CounselingRecordForm({
+  action,
+  initialValues,
+  isOpen,
+  onClose,
+}: CounselingRecordFormProps) {
   const [state, formAction, isPending] = useActionState(action, {
     ...INITIAL_COUNSELING_RECORD_FORM_STATE,
+    values: {
+      ...EMPTY_COUNSELING_RECORD_FORM_VALUES,
+      ...initialValues,
+    },
   });
-  const formStateKey = [
-    state.values.counselingDate,
-    state.values.studentId,
-    state.values.studentName,
-    state.values.className,
-    state.values.meetingNumber,
-    state.values.media,
-    state.values.counselingType,
-    state.values.topic,
-    state.values.counselingResult,
-    state.values.followUp,
-    state.values.description,
-    state.message,
-  ].join("|");
+
+  if (!isOpen) {
+    return null;
+  }
 
   return (
-    <CounselingRecordFormFields
-      key={formStateKey}
-      formAction={formAction}
-      isPending={isPending}
-      state={state}
-    />
+    <div
+      aria-hidden={!isOpen}
+      aria-modal="true"
+      role="dialog"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 px-4 py-6"
+      onClick={onClose}
+    >
+      <div
+        className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-3xl border border-slate-200 bg-white p-6 shadow-xl"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="mb-5 flex items-start justify-between gap-4">
+          <div>
+            <h3 className="text-xl font-semibold text-slate-900">
+              Input Pelanggaran
+            </h3>
+            <p className="mt-1 text-sm text-slate-600">
+              Tambahkan catatan pelanggaran untuk rekap bulanan.
+            </p>
+          </div>
+          <Button type="button" variant="outline" size="sm" onClick={onClose}>
+            Tutup
+          </Button>
+        </div>
+        <CounselingRecordFormFields
+          formAction={formAction}
+          isPending={isPending}
+          onClose={onClose}
+          state={state}
+        />
+      </div>
+    </div>
   );
 }
