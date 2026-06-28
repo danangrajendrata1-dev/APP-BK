@@ -43,21 +43,17 @@ export default async function StudentsPage({ searchParams }: StudentsPageProps) 
   let classOptions: string[] = [];
 
   try {
-    classOptions = await getStudentClassOptions();
+    const [classOptionsData, resultData] = await Promise.all([
+      getStudentClassOptions(),
+      filters.className
+        ? getStudents({ page, pageSize: 20, filters })
+        : Promise.resolve(null),
+    ]);
+    
+    classOptions = classOptionsData;
+    result = resultData;
   } catch (error) {
-    loadError = error instanceof Error ? error.message : "Daftar kelas gagal dimuat.";
-  }
-
-  if (!loadError && filters.className) {
-    try {
-      result = await getStudents({
-        page,
-        pageSize: 20,
-        filters,
-      });
-    } catch (error) {
-      loadError = error instanceof Error ? error.message : "Data siswa gagal dimuat.";
-    }
+    loadError = error instanceof Error ? error.message : "Data siswa gagal dimuat.";
   }
 
   return (

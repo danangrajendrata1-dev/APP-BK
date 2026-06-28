@@ -50,14 +50,44 @@ export default async function SchoolAttendancePage({
 }: SchoolAttendancePageProps) {
   const resolvedSearchParams = await searchParams;
   const filters = parseFilters(resolvedSearchParams);
-  const currentMonth = new Date().getMonth() + 1;
-  const currentYear = new Date().getFullYear();
-  const classOptions = await getStudentClassOptions();
-  const selectedClass = filters.className ?? classOptions[0] ?? "";
-  const selectedMonth = filters.month ?? currentMonth;
-  const selectedYear = filters.year ?? currentYear;
   let loadError = "";
   let result: Awaited<ReturnType<typeof getSchoolAttendanceSheet>> | null = null;
+  let classOptions: string[] = [];
+  let selectedClass = filters.className ?? "";
+  
+  const currentMonth = new Date().getMonth() + 1;
+  const currentYear = new Date().getFullYear();
+  const selectedMonth = filters.month ?? currentMonth;
+  const selectedYear = filters.year ?? currentYear;
+
+  try {
+    if (filters.className) {
+      // Parallelize when className is already known
+      const [options, sheetResult] = await Promise.all([
+        getStudentClassOptions(),
+        getSchoolAttendanceSheet({
+          className: selectedClass,
+          month: selectedMonth,
+          year: selectedYear,
+        }),
+      ]);
+      classOptions = options;
+      result = sheetResult;
+    } else {
+      // Sequential fallback to auto-select first class
+      classOptions = await getStudentClassOptions();
+      selectedClass = classOptions[0] ?? "";
+      if (selectedClass) {
+        result = await getSchoolAttendanceSheet({
+          className: selectedClass,
+          month: selectedMonth,
+          year: selectedYear,
+        });
+      }
+    }
+  } catch (error) {
+    loadError = error instanceof Error ? error.message : "Data gagal dimuat.";
+  }
 
   async function createSchoolAttendanceAction(
     _state: SchoolAttendanceFormState,
@@ -100,18 +130,7 @@ export default async function SchoolAttendancePage({
     }
   }
 
-  try {
-    result = await getSchoolAttendanceSheet({
-      className: selectedClass,
-      month: selectedMonth,
-      year: selectedYear,
-    });
-  } catch (error) {
-    loadError =
-      error instanceof Error
-        ? error.message
-        : "Data daftar hadir sekolah gagal dimuat.";
-  }
+
 
   return (
     <section className="space-y-6">

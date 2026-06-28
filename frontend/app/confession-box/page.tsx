@@ -67,11 +67,10 @@ export default async function ConfessionBoxPage({ searchParams }: PageProps) {
 
   try {
     const supabase = await createSupabaseServerClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();
-      const profileRow = profile as { role?: string } | null;
-      role = normalizeRole(profileRow?.role ?? user.app_metadata?.role ?? user.user_metadata?.role);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user) {
+      const user = session.user;
+      role = normalizeRole(user.app_metadata?.role ?? user.user_metadata?.role);
     }
     
     result = await getConfessions({
