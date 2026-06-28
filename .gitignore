@@ -30,3 +30,6 @@ Thumbs.db
 
 # temporary backups
 .git_broken_backup_*/
+
+codex-steps
+.agents

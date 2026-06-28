@@ -17,11 +17,11 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
           ref={ref}
           rows={rows}
           className={[
-            "w-full rounded-xl border bg-white px-4 py-3 text-sm text-slate-900 outline-none transition",
+            "w-full rounded-xl border px-4 py-3 text-sm text-slate-900 outline-none transition-all duration-200 placeholder:text-slate-400",
             "resize-y",
             error
-              ? "border-rose-400 focus:border-rose-500"
-              : "border-slate-300 focus:border-slate-500",
+              ? "border-rose-300 bg-rose-50/50 focus:border-rose-500 focus:bg-white focus:ring-4 focus:ring-rose-500/10"
+              : "border-slate-200 bg-slate-50/50 focus:border-primary focus:bg-white focus:ring-4 focus:ring-primary/10 hover:border-slate-300",
             className,
           ]
             .filter(Boolean)

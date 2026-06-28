@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
+import { Inter } from "next/font/google";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { normalizeRole, type AppRole } from "@/lib/auth/permissions";
 import "./globals.css";
+
+const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
   title: "Aplikasi BK Sederhana",
@@ -33,8 +36,8 @@ export default async function RootLayout({
   }
 
   return (
-    <html lang="id" className="h-full antialiased">
-      <body className="min-h-full flex flex-col">
+    <html lang="id" className={`h-full antialiased ${inter.variable}`}>
+      <body className="min-h-full flex flex-col bg-background font-sans text-foreground">
         <AppLayout initialUser={user} initialRole={role} initialFullName={fullName}>
           {children}
         </AppLayout>

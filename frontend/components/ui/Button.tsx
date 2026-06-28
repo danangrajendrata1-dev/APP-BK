@@ -15,16 +15,16 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 };
 
 const VARIANT_STYLES: Record<ButtonVariant, string> = {
-  primary: "bg-slate-900 text-white hover:bg-slate-700",
-  secondary: "bg-slate-100 text-slate-900 hover:bg-slate-200",
-  outline: "border border-slate-300 bg-white text-slate-700 hover:bg-slate-100",
-  danger: "bg-rose-600 text-white hover:bg-rose-500",
+  primary: "bg-primary text-white hover:bg-primary-hover shadow-sm active:scale-[0.98]",
+  secondary: "bg-secondary text-secondary-foreground hover:bg-secondary-hover active:scale-[0.98]",
+  outline: "border border-border bg-white text-foreground hover:bg-slate-50 active:scale-[0.98]",
+  danger: "bg-rose-600 text-white hover:bg-rose-700 shadow-sm active:scale-[0.98]",
 };
 
 const SIZE_STYLES: Record<ButtonSize, string> = {
-  sm: "px-3 py-2 text-sm",
-  md: "px-4 py-2.5 text-sm",
-  lg: "px-5 py-3 text-base",
+  sm: "px-3 py-1.5 text-xs",
+  md: "px-4 py-2 text-sm",
+  lg: "px-5 py-2.5 text-base",
 };
 
 export function Button({
@@ -40,8 +40,8 @@ export function Button({
   ...props
 }: ButtonProps) {
   const classNames = [
-    "inline-flex items-center justify-center rounded-xl font-semibold transition",
-    "disabled:cursor-not-allowed disabled:opacity-60",
+    "inline-flex items-center justify-center rounded-xl font-medium transition-all duration-200",
+    "disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100",
     VARIANT_STYLES[variant],
     SIZE_STYLES[size],
     fullWidth ? "w-full" : "",

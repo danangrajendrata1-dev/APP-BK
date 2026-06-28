@@ -36,7 +36,7 @@ export function TableRow({
 }: HTMLAttributes<HTMLTableRowElement>) {
   return (
     <tr
-      className={["transition hover:bg-slate-50", className]
+      className={["transition-colors hover:bg-slate-50/80 group", className]
         .filter(Boolean)
         .join(" ")}
       {...props}
@@ -51,7 +51,7 @@ export function TableHeaderCell({
   return (
     <th
       className={[
-        "border-b border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm font-semibold text-slate-700",
+        "border-b border-slate-100 bg-white/50 px-5 py-3.5 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider",
         className,
       ]
         .filter(Boolean)
@@ -68,7 +68,7 @@ export function TableCell({
   return (
     <td
       className={[
-        "border-b border-slate-100 px-4 py-3 text-sm text-slate-700 align-top",
+        "border-b border-slate-50 px-5 py-4 text-sm text-slate-700 align-top group-last:border-0",
         className,
       ]
         .filter(Boolean)

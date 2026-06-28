@@ -1,17 +1,34 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-  --app-font-sans: Arial, Helvetica, sans-serif;
-  --app-font-mono: "Courier New", Courier, monospace;
+  --background: #f8fafc; /* slate-50 */
+  --foreground: #334155; /* slate-700 */
+  
+  --primary: #0f766e; /* teal-700 */
+  --primary-foreground: #ffffff;
+  --primary-hover: #115e59; /* teal-800 */
+  --primary-light: #ccfbf1; /* teal-50 */
+  
+  --secondary: #e2e8f0; /* slate-200 */
+  --secondary-foreground: #0f172a; /* slate-900 */
+  --secondary-hover: #cbd5e1; /* slate-300 */
+  
+  --border: #e2e8f0; /* slate-200 */
+  --card: #ffffff;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--app-font-sans);
-  --font-mono: var(--app-font-mono);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-light: var(--primary-light);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary-hover: var(--secondary-hover);
+  --color-border: var(--border);
+  --color-card: var(--card);
 }
 
 @media (prefers-color-scheme: dark) {
