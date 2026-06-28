@@ -70,22 +70,22 @@ export function MobileSidebar({
                 href={item.href}
                 prefetch={false}
                 onClick={onClose}
-                className={`flex items-start gap-3 rounded-2xl px-3.5 py-3 transition ${
+                className={`group flex items-center gap-3 rounded-xl px-4 py-3 transition-all duration-200 ${
                   isActive
-                    ? "bg-slate-900 text-white shadow-sm"
-                    : "text-slate-700 hover:bg-slate-100"
+                    ? "bg-teal-700 text-white shadow-md shadow-teal-700/20"
+                    : "text-slate-600 hover:bg-teal-50/50 hover:text-teal-800"
                 }`}
               >
                 <span
-                  className={`mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${
+                  className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-base font-bold transition-colors duration-200 ${
                     isActive
-                      ? "bg-white/15 text-white"
-                      : "bg-slate-200 text-slate-700"
+                      ? "bg-white/20 text-white"
+                      : "bg-slate-100 text-slate-500 group-hover:bg-teal-50 group-hover:text-teal-700"
                   }`}
                 >
                   {index + 1}
                 </span>
-                <span className="text-sm font-medium leading-6">
+                <span className="text-[15px] font-bold leading-tight">
                   {item.label}
                 </span>
               </Link>

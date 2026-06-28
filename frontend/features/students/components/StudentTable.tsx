@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/Button";
+import { formatBirthPlaceDate } from "@/lib/format";
 import type { StudentListResult } from "@/features/students/types/student";
 
 type StudentTableProps = {
@@ -39,36 +40,36 @@ export function StudentTable({
   const showPagination = Boolean(pagination && selectedClass);
 
   return (
-    <section className="border border-slate-500 bg-white">
+    <div className="rounded-2xl border border-slate-100 bg-white shadow-[0_2px_12px_rgb(0,0,0,0.03)] overflow-hidden">
       <div className="overflow-x-auto">
-        <table className="min-w-[1200px] border-collapse text-sm">
+        <table className="w-full min-w-[1200px] text-sm">
           <thead>
             <tr>
-              <th className="border border-slate-500 bg-slate-50 px-2 py-2 text-center text-xs font-semibold uppercase tracking-wide text-slate-900">
+              <th className="border-b border-slate-100 bg-slate-100/60 px-4 py-3.5 text-center text-sm font-bold uppercase tracking-wider text-slate-800">
                 NISN
               </th>
-              <th className="border border-slate-500 bg-slate-50 px-3 py-2 text-center text-xs font-semibold uppercase tracking-wide text-slate-900">
+              <th className="border-b border-slate-100 bg-slate-100/60 px-4 py-3.5 text-left text-sm font-bold uppercase tracking-wider text-slate-800">
                 NAMA LENGKAP
               </th>
-              <th className="border border-slate-500 bg-slate-50 px-3 py-2 text-center text-xs font-semibold uppercase tracking-wide text-slate-900">
+              <th className="border-b border-slate-100 bg-slate-100/60 px-4 py-3.5 text-center text-sm font-bold uppercase tracking-wider text-slate-800">
                 KELAS
               </th>
-              <th className="border border-slate-500 bg-slate-50 px-3 py-2 text-center text-xs font-semibold uppercase tracking-wide text-slate-900">
+              <th className="border-b border-slate-100 bg-slate-100/60 px-4 py-3.5 text-center text-sm font-bold uppercase tracking-wider text-slate-800">
                 L / P
               </th>
-              <th className="border border-slate-500 bg-slate-50 px-3 py-2 text-center text-xs font-semibold uppercase tracking-wide text-slate-900">
+              <th className="border-b border-slate-100 bg-slate-100/60 px-4 py-3.5 text-left text-sm font-bold uppercase tracking-wider text-slate-800">
                 TTL
               </th>
-              <th className="border border-slate-500 bg-slate-50 px-3 py-2 text-center text-xs font-semibold uppercase tracking-wide text-slate-900">
+              <th className="border-b border-slate-100 bg-slate-100/60 px-4 py-3.5 text-left text-sm font-bold uppercase tracking-wider text-slate-800">
                 ALAMAT
               </th>
-              <th className="border border-slate-500 bg-slate-50 px-3 py-2 text-center text-xs font-semibold uppercase tracking-wide text-slate-900">
+              <th className="border-b border-slate-100 bg-slate-100/60 px-4 py-3.5 text-left text-sm font-bold uppercase tracking-wider text-slate-800">
                 NO. HP
               </th>
-              <th className="border border-slate-500 bg-slate-50 px-3 py-2 text-center text-xs font-semibold uppercase tracking-wide text-slate-900">
+              <th className="border-b border-slate-100 bg-slate-100/60 px-4 py-3.5 text-left text-sm font-bold uppercase tracking-wider text-slate-800">
                 NAMA ORANG TUA/WALI
               </th>
-              <th className="border border-slate-500 bg-slate-50 px-3 py-2 text-center text-xs font-semibold uppercase tracking-wide text-slate-900">
+              <th className="border-b border-slate-100 bg-slate-100/60 px-4 py-3.5 text-center text-sm font-bold uppercase tracking-wider text-slate-800">
                 STATUS
               </th>
             </tr>
@@ -78,7 +79,7 @@ export function StudentTable({
               <tr>
                 <td
                   colSpan={9}
-                  className="border border-slate-500 px-4 py-8 text-center text-sm text-slate-500"
+                  className="px-4 py-12 text-center text-sm text-slate-500"
                 >
                   Pilih kelas terlebih dahulu.
                 </td>
@@ -88,32 +89,32 @@ export function StudentTable({
                 const student = items[index];
 
                 return (
-                  <tr key={student?.id ?? `placeholder-${index}`} className="bg-white">
-                    <td className="h-8 border border-slate-500 px-2 py-1 text-center text-xs text-slate-900">
+                  <tr key={student?.id ?? `placeholder-${index}`} className="group transition-colors hover:bg-slate-50/80">
+                    <td className="border-b border-slate-100 px-4 py-3.5 text-center text-sm text-slate-700 group-last:border-0">
                       {student?.nisn ?? ""}
                     </td>
-                    <td className="h-8 border border-slate-500 px-3 py-1 text-xs uppercase tracking-wide text-slate-900">
+                    <td className="border-b border-slate-100 px-4 py-3.5 text-sm uppercase text-slate-700 group-last:border-0">
                       {student ? student.fullName.toUpperCase() : ""}
                     </td>
-                    <td className="h-8 border border-slate-500 px-3 py-1 text-center text-xs text-slate-900">
+                    <td className="border-b border-slate-100 px-4 py-3.5 text-center text-sm text-slate-700 group-last:border-0">
                       {student?.className ?? ""}
                     </td>
-                    <td className="h-8 border border-slate-500 px-3 py-1 text-center text-xs text-slate-900">
+                    <td className="border-b border-slate-100 px-4 py-3.5 text-center text-sm text-slate-700 group-last:border-0">
                       {student ? normalizeGender(student.gender) : ""}
                     </td>
-                    <td className="h-8 border border-slate-500 px-3 py-1 text-xs text-slate-900">
-                      {student ? normalizeText(student.birthPlaceDate) : ""}
+                    <td className="border-b border-slate-100 px-4 py-3.5 text-sm text-slate-700 group-last:border-0">
+                      {student ? formatBirthPlaceDate(student.birthPlaceDate) : ""}
                     </td>
-                    <td className="h-8 border border-slate-500 px-3 py-1 text-xs text-slate-900">
+                    <td className="border-b border-slate-100 px-4 py-3.5 text-sm text-slate-700 group-last:border-0">
                       {student ? normalizeText(student.address) : ""}
                     </td>
-                    <td className="h-8 border border-slate-500 px-3 py-1 text-xs text-slate-900">
+                    <td className="border-b border-slate-100 px-4 py-3.5 text-sm text-slate-700 group-last:border-0">
                       {student ? normalizeText(student.phone) : ""}
                     </td>
-                    <td className="h-8 border border-slate-500 px-3 py-1 text-xs text-slate-900">
+                    <td className="border-b border-slate-100 px-4 py-3.5 text-sm text-slate-700 group-last:border-0">
                       {student ? normalizeText(student.parentName) : ""}
                     </td>
-                    <td className="h-8 border border-slate-500 px-3 py-1 text-center text-xs text-slate-900">
+                    <td className="border-b border-slate-100 px-4 py-3.5 text-center text-sm text-slate-700 group-last:border-0">
                       {student?.status ?? ""}
                     </td>
                   </tr>
@@ -123,7 +124,7 @@ export function StudentTable({
               <tr>
                 <td
                   colSpan={9}
-                  className="border border-slate-500 px-4 py-8 text-center text-sm text-slate-500"
+                  className="px-4 py-12 text-center text-sm text-slate-500"
                 >
                   Belum ada data untuk kelas ini.
                 </td>
@@ -133,7 +134,7 @@ export function StudentTable({
         </table>
       </div>
       {showPagination && pagination ? (
-        <div className="flex flex-col gap-3 border-t border-slate-500 px-3 py-2 text-sm text-slate-700 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 border-t border-slate-100 px-4 py-3.5 text-sm text-slate-700 sm:flex-row sm:items-center sm:justify-between">
           <p>
             Halaman {pagination.page} dari {pagination.totalPages}
           </p>
@@ -157,6 +158,6 @@ export function StudentTable({
           </div>
         </div>
       ) : null}
-    </section>
+    </div>
   );
 }

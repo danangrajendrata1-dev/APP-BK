@@ -38,8 +38,23 @@ type SchoolAttendanceFormFieldsProps = {
   onClose: () => void;
 };
 
-const MONTH_OPTIONS = Array.from({ length: 12 }, (_, index) => ({
-  label: String(index + 1),
+const MONTH_NAMES = [
+  "Januari",
+  "Februari",
+  "Maret",
+  "April",
+  "Mei",
+  "Juni",
+  "Juli",
+  "Agustus",
+  "September",
+  "Oktober",
+  "November",
+  "Desember",
+];
+
+const MONTH_OPTIONS = MONTH_NAMES.map((name, index) => ({
+  label: name,
   value: String(index + 1),
 }));
 

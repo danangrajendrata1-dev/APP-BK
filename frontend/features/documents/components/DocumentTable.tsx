@@ -19,8 +19,8 @@ function getDocumentLabel(item: DocumentListResult["items"][number]) {
 function renderEmptyRows(count: number) {
   return Array.from({ length: count }, (_, index) => (
     <tr key={`empty-row-${index}`} className="h-10">
-      <td className="border border-slate-300 px-2 py-2" />
-      <td className="border border-slate-300 px-2 py-2" />
+      <td className="border-b border-slate-100 px-3 py-3.5" />
+      <td className="border-b border-slate-100 px-3 py-3.5" />
     </tr>
   ));
 }
@@ -30,7 +30,7 @@ export function DocumentTable({ result }: Props) {
 
   if (!items.length) {
     return (
-      <div className="border border-slate-300 bg-white">
+      <div className="border-b border-slate-100 bg-white">
         <EmptyState
           title="Belum ada surat & dokumen"
           description="Gunakan tombol Import Surat / Dokumen untuk menambahkan dokumen pertama."
@@ -42,15 +42,15 @@ export function DocumentTable({ result }: Props) {
   const emptyRowCount = Math.max(0, 8 - items.length);
 
   return (
-    <section className="space-y-4 border border-slate-300 bg-white">
+    <div className="space-y-4 rounded-2xl border border-slate-100 bg-white shadow-[0_2px_12px_rgb(0,0,0,0.03)] overflow-hidden">
       <div className="overflow-x-auto">
-        <table className="min-w-full border-collapse bg-white text-xs text-slate-800 sm:text-sm">
+        <table className="min-w-full  bg-white text-sm text-slate-800 sm:text-sm">
           <thead>
             <tr>
-              <th className="border border-slate-300 bg-slate-50 px-2 py-2 text-left font-semibold uppercase tracking-normal text-slate-900">
+              <th className="border-b border-slate-100 bg-slate-100/60 px-3 py-3.5 text-left font-semibold uppercase tracking-normal text-slate-800">
                 Surat &amp; Dokumen
               </th>
-              <th className="border border-slate-300 bg-slate-50 px-2 py-2 text-left font-semibold uppercase tracking-normal text-slate-900">
+              <th className="border-b border-slate-100 bg-slate-100/60 px-3 py-3.5 text-left font-semibold uppercase tracking-normal text-slate-800">
                 Deskripsi / Preview Isi
               </th>
             </tr>
@@ -58,10 +58,10 @@ export function DocumentTable({ result }: Props) {
           <tbody>
             {items.map((item) => (
               <tr key={item.id} className="align-top">
-                <td className="border border-slate-300 px-2 py-2">
-                  <p className="font-medium text-slate-900">{getDocumentLabel(item)}</p>
+                <td className="border-b border-slate-100 px-3 py-3.5">
+                  <p className="font-medium text-slate-800">{getDocumentLabel(item)}</p>
                 </td>
-                <td className="border border-slate-300 px-2 py-2">
+                <td className="border-b border-slate-100 px-3 py-3.5">
                   <div className="space-y-2">
                     <p className="whitespace-pre-wrap leading-5 text-slate-700">
                       {item.description || "Preview belum tersedia"}
@@ -75,7 +75,7 @@ export function DocumentTable({ result }: Props) {
                         Buka dokumen
                       </Button>
                     ) : (
-                      <p className="text-xs text-slate-500">Preview belum tersedia</p>
+                      <p className="text-sm text-slate-500">Preview belum tersedia</p>
                     )}
                   </div>
                 </td>
@@ -85,7 +85,7 @@ export function DocumentTable({ result }: Props) {
           </tbody>
         </table>
       </div>
-      <div className="flex flex-col gap-3 border-t border-slate-200 px-3 py-3 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 border-t border-slate-200 px-3 py-3 text-sm text-slate-800 sm:flex-row sm:items-center sm:justify-between">
         <p>
           Halaman {pagination.page} dari {pagination.totalPages}
         </p>
@@ -106,6 +106,6 @@ export function DocumentTable({ result }: Props) {
           </Button>
         </div>
       </div>
-    </section>
+    </div>
   );
 }

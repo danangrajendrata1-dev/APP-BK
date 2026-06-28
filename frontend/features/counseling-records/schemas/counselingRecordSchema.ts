@@ -24,18 +24,18 @@ export const VIOLATION_CODE_OPTIONS: Array<{
 ];
 
 export const MONTH_OPTIONS = [
-  { label: "1 - Januari", value: "1" },
-  { label: "2 - Februari", value: "2" },
-  { label: "3 - Maret", value: "3" },
-  { label: "4 - April", value: "4" },
-  { label: "5 - Mei", value: "5" },
-  { label: "6 - Juni", value: "6" },
-  { label: "7 - Juli", value: "7" },
-  { label: "8 - Agustus", value: "8" },
-  { label: "9 - September", value: "9" },
-  { label: "10 - Oktober", value: "10" },
-  { label: "11 - November", value: "11" },
-  { label: "12 - Desember", value: "12" },
+  { label: "Januari", value: "1" },
+  { label: "Februari", value: "2" },
+  { label: "Maret", value: "3" },
+  { label: "April", value: "4" },
+  { label: "Mei", value: "5" },
+  { label: "Juni", value: "6" },
+  { label: "Juli", value: "7" },
+  { label: "Agustus", value: "8" },
+  { label: "September", value: "9" },
+  { label: "Oktober", value: "10" },
+  { label: "November", value: "11" },
+  { label: "Desember", value: "12" },
 ];
 
 const VALID_VIOLATION_CODES = new Set(VIOLATION_CODE_OPTIONS.map((item) => item.value));

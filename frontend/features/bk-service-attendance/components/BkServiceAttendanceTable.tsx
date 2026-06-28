@@ -13,36 +13,36 @@ export function BkServiceAttendanceTable({
   const visibleRowCount = Math.max(items.length, PLACEHOLDER_ROWS);
 
   return (
-    <section className="border border-slate-500 bg-white">
+    <div className="rounded-2xl border border-slate-100 bg-white shadow-[0_2px_12px_rgb(0,0,0,0.03)] overflow-hidden">
       <div className="overflow-x-auto">
-        <table className="min-w-[1400px] border-collapse text-sm">
+        <table className="w-full min-w-[1400px] text-sm">
           <thead>
             <tr>
-              <th className="border border-slate-500 bg-slate-50 px-2 py-2 text-center text-xs font-bold uppercase text-slate-900">
+              <th className="border-b border-slate-100 bg-slate-100/60 px-3 py-3.5 text-center text-sm font-extrabold uppercase text-slate-800">
                 NO
               </th>
-              <th className="border border-slate-500 bg-slate-50 px-3 py-2 text-center text-xs font-bold uppercase text-slate-900">
+              <th className="border-b border-slate-100 bg-slate-100/60 px-4 py-3.5 text-center text-sm font-extrabold uppercase text-slate-800">
                 TANGGAL
               </th>
-              <th className="border border-slate-500 bg-slate-50 px-3 py-2 text-center text-xs font-bold uppercase text-slate-900">
+              <th className="border-b border-slate-100 bg-slate-100/60 px-4 py-3.5 text-center text-sm font-extrabold uppercase text-slate-800">
                 NAMA LENGKAP
               </th>
-              <th className="border border-slate-500 bg-slate-50 px-3 py-2 text-center text-xs font-bold uppercase text-slate-900">
+              <th className="border-b border-slate-100 bg-slate-100/60 px-4 py-3.5 text-center text-sm font-extrabold uppercase text-slate-800">
                 KELAS
               </th>
-              <th className="border border-slate-500 bg-slate-50 px-3 py-2 text-center text-xs font-bold uppercase text-slate-900">
+              <th className="border-b border-slate-100 bg-slate-100/60 px-4 py-3.5 text-center text-sm font-extrabold uppercase text-slate-800">
                 KEPERLUAN
               </th>
-              <th className="border border-slate-500 bg-slate-50 px-3 py-2 text-center text-xs font-bold uppercase text-slate-900">
+              <th className="border-b border-slate-100 bg-slate-100/60 px-4 py-3.5 text-center text-sm font-extrabold uppercase text-slate-800">
                 URAIAN
               </th>
-              <th className="border border-slate-500 bg-slate-50 px-3 py-2 text-center text-xs font-bold uppercase text-slate-900">
+              <th className="border-b border-slate-100 bg-slate-100/60 px-4 py-3.5 text-center text-sm font-extrabold uppercase text-slate-800">
                 HASIL
               </th>
-              <th className="border border-slate-500 bg-slate-50 px-3 py-2 text-center text-xs font-bold uppercase text-slate-900">
+              <th className="border-b border-slate-100 bg-slate-100/60 px-4 py-3.5 text-center text-sm font-extrabold uppercase text-slate-800">
                 TINDAK LANJUT
               </th>
-              <th className="border border-slate-500 bg-slate-50 px-3 py-2 text-center text-xs font-bold uppercase text-slate-900">
+              <th className="border-b border-slate-100 bg-slate-100/60 px-4 py-3.5 text-center text-sm font-extrabold uppercase text-slate-800">
                 TTD
               </th>
             </tr>
@@ -53,31 +53,31 @@ export function BkServiceAttendanceTable({
 
               return (
                 <tr key={item?.id ?? `blank-${index}`} className="bg-white">
-                  <td className="h-8 border border-slate-500 px-2 py-1 text-center text-xs text-slate-900">
+                  <td className="border-b border-slate-100 px-3 py-3 text-center text-sm text-slate-800">
                     {item ? index + 1 : ""}
                   </td>
-                  <td className="h-8 border border-slate-500 px-3 py-1 text-xs text-slate-900">
+                  <td className="border-b border-slate-100 px-4 py-3 text-sm text-slate-800">
                     {item?.serviceDate ?? ""}
                   </td>
-                  <td className="h-8 border border-slate-500 px-3 py-1 text-xs uppercase tracking-wide text-slate-900">
+                  <td className="border-b border-slate-100 px-4 py-3 text-sm uppercase tracking-wide text-slate-800">
                     {item ? item.studentName.toUpperCase() : ""}
                   </td>
-                  <td className="h-8 border border-slate-500 px-3 py-1 text-xs text-slate-900">
+                  <td className="border-b border-slate-100 px-4 py-3 text-sm text-slate-800">
                     {item?.className ?? ""}
                   </td>
-              <td className="h-8 border border-slate-500 px-3 py-1 text-xs text-slate-900">
+              <td className="border-b border-slate-100 px-4 py-3 text-sm text-slate-800">
                 {item?.purpose ?? ""}
               </td>
-              <td className="h-8 border border-slate-500 px-3 py-1 text-xs text-slate-900">
+              <td className="border-b border-slate-100 px-4 py-3 text-sm text-slate-800">
                 {item?.description ?? ""}
               </td>
-              <td className="h-8 border border-slate-500 px-3 py-1 text-xs text-slate-900">
+              <td className="border-b border-slate-100 px-4 py-3 text-sm text-slate-800">
                 {item?.result ?? ""}
               </td>
-              <td className="h-8 border border-slate-500 px-3 py-1 text-xs text-slate-900">
+              <td className="border-b border-slate-100 px-4 py-3 text-sm text-slate-800">
                 {item?.followUp ?? ""}
               </td>
-              <td className="h-8 border border-slate-500 px-3 py-1 text-xs text-slate-900">
+              <td className="border-b border-slate-100 px-4 py-3 text-sm text-slate-800">
                 {item?.signature ?? ""}
               </td>
             </tr>
@@ -86,6 +86,6 @@ export function BkServiceAttendanceTable({
           </tbody>
         </table>
       </div>
-    </section>
+    </div>
   );
 }

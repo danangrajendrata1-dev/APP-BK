@@ -22,7 +22,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
           "w-full rounded-xl border px-4 py-2.5 text-sm text-slate-900 outline-none transition-all duration-200 placeholder:text-slate-400",
           error
             ? "border-rose-300 bg-rose-50/50 focus:border-rose-500 focus:bg-white focus:ring-4 focus:ring-rose-500/10"
-            : "border-slate-200 bg-slate-50/50 focus:border-primary focus:bg-white focus:ring-4 focus:ring-primary/10 hover:border-slate-300",
+            : "border-slate-200 bg-slate-50/50 focus:border-teal-500 focus:bg-white focus:ring-4 focus:ring-teal-700/10 hover:border-slate-300",
           className,
         ]
           .filter(Boolean)

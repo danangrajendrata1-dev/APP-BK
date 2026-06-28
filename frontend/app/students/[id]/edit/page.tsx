@@ -30,6 +30,8 @@ function toFormValues(student: Awaited<ReturnType<typeof getStudentById>>): Stud
       gender: "",
       className: "",
       birthPlaceDate: "",
+      birthPlace: "",
+      birthDate: "",
       address: "",
       phone: "",
       parentName: "",
@@ -37,15 +39,27 @@ function toFormValues(student: Awaited<ReturnType<typeof getStudentById>>): Stud
     };
   }
 
+  const rawBpd = student.birthPlaceDate || "";
+  const parts = rawBpd.split(", ");
+  const birthPlace = parts[0] || "";
+  let birthDate = parts[1] || "";
+
+  const isIsoDate = /^\d{4}-\d{2}-\d{2}$/.test(birthDate);
+  if (!isIsoDate) {
+    birthDate = "";
+  }
+
   return {
     nisn: student.nisn,
     fullName: student.fullName,
     gender: student.gender,
     className: student.className,
-    birthPlaceDate: student.birthPlaceDate,
-    address: student.address,
-    phone: student.phone,
-    parentName: student.parentName,
+    birthPlaceDate: student.birthPlaceDate || "",
+    birthPlace,
+    birthDate,
+    address: student.address || "",
+    phone: student.phone || "",
+    parentName: student.parentName || "",
     status: student.status,
   };
 }
@@ -79,9 +93,6 @@ export default async function EditStudentPage({
 
     try {
       await updateStudent(id, values);
-      revalidatePath("/students");
-      revalidatePath(`/students/${id}`);
-      redirect(`/students/${id}`);
     } catch (error) {
       return createStudentFormState(
         values,
@@ -89,6 +100,10 @@ export default async function EditStudentPage({
         error instanceof Error ? error.message : "Gagal memperbarui data siswa.",
       );
     }
+
+    revalidatePath("/students");
+    revalidatePath(`/students/${id}`);
+    redirect("/students");
   }
 
   return (

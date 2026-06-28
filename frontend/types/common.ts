@@ -63,6 +63,8 @@ export type StudentFormValues = {
   gender: string;
   className: string;
   birthPlaceDate: string;
+  birthPlace: string;
+  birthDate: string;
   address: string;
   phone: string;
   parentName: string;

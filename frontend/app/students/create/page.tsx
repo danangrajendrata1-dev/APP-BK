@@ -35,9 +35,7 @@ export default function CreateStudentPage() {
     }
 
     try {
-      const student = await createStudent(values);
-      revalidatePath("/students");
-      redirect(`/students/${student.id}`);
+      await createStudent(values);
     } catch (error) {
       return createStudentFormState(
         values,
@@ -45,6 +43,9 @@ export default function CreateStudentPage() {
         error instanceof Error ? error.message : "Gagal menambahkan data siswa.",
       );
     }
+
+    revalidatePath("/students");
+    redirect("/students");
   }
 
   return (

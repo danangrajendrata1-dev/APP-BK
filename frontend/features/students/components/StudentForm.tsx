@@ -89,11 +89,18 @@ export function StudentForm({
           placeholder="Contoh: X-TKJ-1"
         />
         <Input
-          name="birthPlaceDate"
-          label="Tempat Tanggal Lahir"
-          defaultValue={values.birthPlaceDate}
-          error={state.errors.birthPlaceDate}
-          placeholder="Contoh: Bandung, 12 Januari 2008"
+          name="birthPlace"
+          label="Tempat Lahir"
+          defaultValue={values.birthPlace}
+          error={state.errors.birthPlace}
+          placeholder="Masukkan tempat lahir (contoh: Bandung)"
+        />
+        <Input
+          name="birthDate"
+          label="Tanggal Lahir"
+          type="date"
+          defaultValue={values.birthDate}
+          error={state.errors.birthDate}
         />
         <Input
           name="phone"

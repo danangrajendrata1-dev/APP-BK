@@ -51,41 +51,41 @@ export function ClassAssistanceTable({ result, queryString }: Props) {
   const emptyMessage = hasClassSelected ? "Belum ada data untuk kelas ini." : "Pilih kelas terlebih dahulu.";
 
   return (
-    <section className="border border-slate-400 bg-white">
+    <div className="rounded-2xl border border-slate-100 bg-white shadow-[0_2px_12px_rgb(0,0,0,0.03)] overflow-hidden">
       <div className="overflow-x-auto">
-        <table className="min-w-[1500px] border-collapse text-xs">
+        <table className="w-full min-w-[1500px] text-sm">
           <thead>
             <tr>
-              <th rowSpan={2} className="border border-slate-400 bg-slate-50 px-2 py-2 text-center font-bold uppercase text-slate-900">
+              <th rowSpan={2} className="border-b border-r border-slate-100 bg-slate-100/60 px-3 py-3.5 text-center font-extrabold uppercase text-slate-800">
                 NO.
               </th>
-              <th rowSpan={2} className="border border-slate-400 bg-slate-50 px-3 py-2 text-left font-bold uppercase text-slate-900">
+              <th rowSpan={2} className="border-b border-r border-slate-100 bg-slate-100/60 px-4 py-3.5 text-left font-extrabold uppercase text-slate-800">
                 NAMA SISWA
               </th>
-              <th colSpan={VIOLATION_COLUMNS.length} className="border border-slate-400 bg-slate-50 px-3 py-2 text-center font-bold uppercase text-slate-900">
+              <th colSpan={VIOLATION_COLUMNS.length} className="border-b border-r border-slate-100 bg-slate-100/60 px-4 py-3.5 text-center font-extrabold uppercase text-slate-800">
                 JENIS PELANGGARAN
               </th>
-              <th colSpan={ACTION_COLUMNS.length} className="border border-slate-400 bg-slate-50 px-3 py-2 text-center font-bold uppercase text-slate-900">
+              <th colSpan={ACTION_COLUMNS.length} className="border-b border-r border-slate-100 bg-slate-100/60 px-4 py-3.5 text-center font-extrabold uppercase text-slate-800">
                 BENTUK TINDAKAN
               </th>
-              <th rowSpan={2} className="border border-slate-400 bg-slate-50 px-3 py-2 text-center font-bold uppercase text-slate-900">
+              <th rowSpan={2} className="border-b border-r border-slate-100 bg-slate-100/60 px-4 py-3.5 text-center font-extrabold uppercase text-slate-800">
                 REMISI
               </th>
-              <th rowSpan={2} className="border border-slate-400 bg-slate-50 px-3 py-2 text-center font-bold uppercase text-slate-900">
+              <th rowSpan={2} className="border-b border-r border-slate-100 bg-slate-100/60 px-4 py-3.5 text-center font-extrabold uppercase text-slate-800">
                 KETERANGAN
               </th>
-              <th rowSpan={2} className="border border-slate-400 bg-slate-50 px-3 py-2 text-center font-bold uppercase text-slate-900">
+              <th rowSpan={2} className="border-b border-r border-slate-100 bg-slate-100/60 px-4 py-3.5 text-center font-extrabold uppercase text-slate-800">
                 SP AKHIR
               </th>
             </tr>
             <tr>
               {VIOLATION_COLUMNS.map((code) => (
-                <th key={code} className="border border-slate-400 bg-white px-2 py-2 text-center font-bold text-slate-900">
+                <th key={code} className="border-b border-r border-slate-100 bg-white px-3 py-3.5 text-center font-bold text-slate-800">
                   {VIOLATION_LABELS[code]}
                 </th>
               ))}
               {ACTION_COLUMNS.map((code) => (
-                <th key={code} className="border border-slate-400 bg-white px-2 py-2 text-center font-bold text-slate-900">
+                <th key={code} className="border-b border-r border-slate-100 bg-white px-3 py-3.5 text-center font-bold text-slate-800">
                   {ACTION_LABELS[code]}
                 </th>
               ))}
@@ -94,43 +94,43 @@ export function ClassAssistanceTable({ result, queryString }: Props) {
           <tbody>
             {!hasClassSelected ? (
               <tr>
-                <td colSpan={2 + VIOLATION_COLUMNS.length + ACTION_COLUMNS.length + 3} className="border border-slate-400 px-4 py-8 text-center text-sm text-slate-500">
+                <td colSpan={2 + VIOLATION_COLUMNS.length + ACTION_COLUMNS.length + 3} className="border-b border-r border-slate-100 px-4 py-8 text-center text-sm text-slate-500">
                   {emptyMessage}
                 </td>
               </tr>
             ) : items.length ? (
               items.map((item, index) => (
                 <tr key={item.id} className="bg-white">
-                  <td className="h-8 border border-slate-400 px-2 py-1 text-center text-xs text-slate-900">
+                  <td className="h-8 border-b border-r border-slate-100 px-3 py-3 text-center text-sm text-slate-800">
                     {((pagination.page - 1) * pagination.pageSize) + index + 1}
                   </td>
-                  <td className="h-8 border border-slate-400 px-3 py-1 text-xs font-medium uppercase tracking-wide text-slate-900">
+                  <td className="h-8 border-b border-r border-slate-100 px-4 py-3 text-sm font-bold uppercase tracking-wide text-slate-800">
                     {item.studentName.toUpperCase()}
                   </td>
                   {VIOLATION_COLUMNS.map((code) => (
-                    <td key={code} className="h-8 border border-slate-400 px-2 py-1 text-center text-xs text-slate-900">
+                    <td key={code} className="h-8 border-b border-r border-slate-100 px-3 py-3 text-center text-sm text-slate-800">
                       {formatMarkerCount(item.violationCounts[code])}
                     </td>
                   ))}
                   {ACTION_COLUMNS.map((code) => (
-                    <td key={code} className="h-8 border border-slate-400 px-2 py-1 text-center text-xs text-slate-900">
+                    <td key={code} className="h-8 border-b border-r border-slate-100 px-3 py-3 text-center text-sm text-slate-800">
                       {formatMarkerCount(item.actionCounts[code])}
                     </td>
                   ))}
-                  <td className="h-8 border border-slate-400 px-3 py-1 text-center text-xs text-slate-900">
+                  <td className="h-8 border-b border-r border-slate-100 px-4 py-3 text-center text-sm text-slate-800">
                     {getDisplayText(item.remission)}
                   </td>
-                  <td className="h-8 border border-slate-400 px-3 py-1 text-xs text-slate-900">
+                  <td className="h-8 border-b border-r border-slate-100 px-4 py-3 text-sm text-slate-800">
                     {getDisplayText(item.description)}
                   </td>
-                  <td className="h-8 border border-slate-400 px-3 py-1 text-center text-xs text-slate-900">
+                  <td className="h-8 border-b border-r border-slate-100 px-4 py-3 text-center text-sm text-slate-800">
                     {getDisplayText(item.finalWarningLetter)}
                   </td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan={2 + VIOLATION_COLUMNS.length + ACTION_COLUMNS.length + 3} className="border border-slate-400 px-4 py-8 text-center text-sm text-slate-500">
+                <td colSpan={2 + VIOLATION_COLUMNS.length + ACTION_COLUMNS.length + 3} className="border-b border-r border-slate-100 px-4 py-8 text-center text-sm text-slate-500">
                   {emptyMessage}
                 </td>
               </tr>
@@ -138,7 +138,7 @@ export function ClassAssistanceTable({ result, queryString }: Props) {
           </tbody>
         </table>
       </div>
-      <div className="flex flex-col gap-3 border-t border-slate-300 px-3 py-3 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 border-t border-slate-300 px-3 py-3 text-sm text-slate-800 sm:flex-row sm:items-center sm:justify-between">
         <p>
           Halaman {pagination.page} dari {pagination.totalPages}
         </p>
@@ -161,6 +161,6 @@ export function ClassAssistanceTable({ result, queryString }: Props) {
           </Button>
         </div>
       </div>
-    </section>
+    </div>
   );
 }

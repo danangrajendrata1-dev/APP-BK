@@ -53,7 +53,7 @@ export function ConfessionTable({ result, queryString, title, description }: Pro
             ))}
           </TableBody>
         </Table>
-        <div className="flex flex-col gap-3 border-t border-slate-200 pt-5 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 border-t border-slate-200 pt-5 text-sm text-slate-800 sm:flex-row sm:items-center sm:justify-between">
           <p>Halaman {pagination.page} dari {pagination.totalPages}</p>
           <div className="flex gap-3">
             <Button href={createPageHref(queryString, pagination.page - 1)} variant="outline" disabled={pagination.page <= 1}>Sebelumnya</Button>

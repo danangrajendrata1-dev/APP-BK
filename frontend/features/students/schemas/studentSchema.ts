@@ -20,6 +20,8 @@ export const EMPTY_STUDENT_FORM_VALUES: StudentFormValues = {
   gender: "",
   className: "",
   birthPlaceDate: "",
+  birthPlace: "",
+  birthDate: "",
   address: "",
   phone: "",
   parentName: "",
@@ -38,12 +40,26 @@ function getTextValue(formData: FormData, fieldName: string) {
 }
 
 export function parseStudentFormData(formData: FormData): StudentFormValues {
+  const birthPlace = getTextValue(formData, "birthPlace");
+  const birthDate = getTextValue(formData, "birthDate");
+  
+  let birthPlaceDate = "";
+  if (birthPlace && birthDate) {
+    birthPlaceDate = `${birthPlace}, ${birthDate}`;
+  } else if (birthPlace) {
+    birthPlaceDate = birthPlace;
+  } else if (birthDate) {
+    birthPlaceDate = birthDate;
+  }
+
   return {
     nisn: getTextValue(formData, "nisn"),
     fullName: getTextValue(formData, "fullName"),
     gender: getTextValue(formData, "gender"),
     className: getTextValue(formData, "className"),
-    birthPlaceDate: getTextValue(formData, "birthPlaceDate"),
+    birthPlaceDate,
+    birthPlace,
+    birthDate,
     address: getTextValue(formData, "address"),
     phone: getTextValue(formData, "phone"),
     parentName: getTextValue(formData, "parentName"),
@@ -74,8 +90,12 @@ export function validateStudentForm(
     errors.className = BASIC_VALIDATION_RULES.required;
   }
 
-  if (!values.birthPlaceDate) {
-    errors.birthPlaceDate = BASIC_VALIDATION_RULES.required;
+  if (!values.birthPlace) {
+    errors.birthPlace = BASIC_VALIDATION_RULES.required;
+  }
+
+  if (!values.birthDate) {
+    errors.birthDate = BASIC_VALIDATION_RULES.required;
   }
 
   if (!values.address) {

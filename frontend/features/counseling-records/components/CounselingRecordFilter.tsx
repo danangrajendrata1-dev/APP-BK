@@ -24,8 +24,8 @@ export function CounselingRecordFilter({ action, filters }: Props) {
 
   return (
     <>
-      <section className="border border-slate-300 bg-white">
-        <div className="flex flex-col gap-3 border-b border-slate-200 px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="rounded-2xl border border-slate-100 bg-white shadow-[0_2px_12px_rgb(0,0,0,0.03)]">
+        <div className="flex flex-col gap-3 border-b border-slate-100 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
               Filter Rekap Pelanggaran
@@ -74,7 +74,7 @@ export function CounselingRecordFilter({ action, filters }: Props) {
             </div>
           </div>
         </form>
-      </section>
+      </div>
       <CounselingRecordForm
         action={action}
         initialValues={{

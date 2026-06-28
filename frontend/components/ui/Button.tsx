@@ -15,9 +15,9 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 };
 
 const VARIANT_STYLES: Record<ButtonVariant, string> = {
-  primary: "bg-primary text-white hover:bg-primary-hover shadow-sm active:scale-[0.98]",
-  secondary: "bg-secondary text-secondary-foreground hover:bg-secondary-hover active:scale-[0.98]",
-  outline: "border border-border bg-white text-foreground hover:bg-slate-50 active:scale-[0.98]",
+  primary: "bg-teal-700 text-white hover:bg-teal-800 shadow-sm active:scale-[0.98]",
+  secondary: "bg-slate-200 text-slate-900 hover:bg-slate-300 active:scale-[0.98]",
+  outline: "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 active:scale-[0.98]",
   danger: "bg-rose-600 text-white hover:bg-rose-700 shadow-sm active:scale-[0.98]",
 };
 

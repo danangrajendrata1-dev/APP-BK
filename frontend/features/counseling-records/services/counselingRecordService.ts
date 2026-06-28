@@ -447,7 +447,7 @@ export async function getCounselingRecordSheet(
     }
   }
 
-  const items = [...groupedMap.values()]
+  const items = [...new Set(groupedMap.values())]
     .filter((item) =>
       VIOLATION_CODE_ORDER.some(
         (code) => item.previousCounts[code] > 0 || item.currentCounts[code] > 0,

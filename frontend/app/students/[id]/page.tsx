@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/Card";
 import { StudentStatusBadge } from "@/features/students/components/StudentStatusBadge";
 import { getStudentById } from "@/features/students/services/studentService";
+import { formatBirthPlaceDate } from "@/lib/format";
 
 type StudentDetailPageProps = {
   params: Promise<{
@@ -71,7 +72,7 @@ export default async function StudentDetailPage({
           <DetailItem label="Nama Lengkap" value={student.fullName} />
           <DetailItem label="L / P" value={student.gender} />
           <DetailItem label="Kelas" value={student.className} />
-          <DetailItem label="TTL" value={student.birthPlaceDate} />
+          <DetailItem label="TTL" value={formatBirthPlaceDate(student.birthPlaceDate)} />
           <DetailItem label="Nomor HP" value={student.phone} />
           <DetailItem label="Nama Orang Tua/Wali" value={student.parentName} />
           <DetailItem label="Status" value={student.status} />

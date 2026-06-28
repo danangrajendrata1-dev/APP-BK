@@ -51,7 +51,7 @@ export function TableHeaderCell({
   return (
     <th
       className={[
-        "border-b border-slate-100 bg-white/50 px-5 py-3.5 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider",
+        "border-b border-slate-100 bg-slate-100/60 px-5 py-3.5 text-left text-sm font-bold text-slate-800 uppercase tracking-wider",
         className,
       ]
         .filter(Boolean)

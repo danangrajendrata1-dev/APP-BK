@@ -373,7 +373,7 @@ export async function getClassAssistanceRecap(
     groupedMap.set(key, existing);
   }
 
-  const items = [...groupedMap.values()]
+  const items = [...new Set(groupedMap.values())]
     .filter((item) => {
       if (filters.violationType && item.violationCounts[filters.violationType] <= 0) {
         return false;
