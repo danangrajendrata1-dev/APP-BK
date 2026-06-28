@@ -34,49 +34,6 @@ function parseFilters(searchParams: Record<string, string | string[] | undefined
   };
 }
 
-async function getCurrentRole(): Promise<AppRole> {
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-
-  if (authError) {
-    logSupabaseError("[ConfessionBox] auth.getUser", authError);
-  }
-
-  if (!user) {
-    return "siswa";
-  }
-
-  const { data: profile, error: profileError } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  if (profileError) {
-    logSupabaseError("[ConfessionBox] profile lookup", profileError, {
-      userId: user.id,
-    });
-  }
-
-  const profileRole = (profile as { role?: string } | null)?.role;
-  const resolvedRole = normalizeRole(
-    profileRole ?? user.app_metadata?.role ?? user.user_metadata?.role,
-  );
-
-  console.info("[ConfessionBox] role result", {
-    userId: user.id,
-    profileRole: profileRole ?? null,
-    appMetadataRole: user.app_metadata?.role ?? null,
-    userMetadataRole: user.user_metadata?.role ?? null,
-    resolvedRole,
-    profileFound: Boolean(profile),
-  });
-
-  return resolvedRole;
-}
 
 export default async function ConfessionBoxPage({ searchParams }: PageProps) {
   const resolvedSearchParams = await searchParams;
@@ -109,7 +66,14 @@ export default async function ConfessionBoxPage({ searchParams }: PageProps) {
   }
 
   try {
-    role = await getCurrentRole();
+    const supabase = await createSupabaseServerClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();
+      const profileRow = profile as { role?: string } | null;
+      role = normalizeRole(profileRow?.role ?? user.app_metadata?.role ?? user.user_metadata?.role);
+    }
+    
     result = await getConfessions({
       page,
       pageSize: 20,

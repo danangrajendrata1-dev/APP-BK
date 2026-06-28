@@ -32,11 +32,13 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
   const supabase = await createSupabaseServerClient();
   const now = new Date();
   const monthPeriods = getLastSixMonthPeriods(now);
+  const minDate = monthPeriods[monthPeriods.length - 1]?.startDate ?? "";
+  const maxDate = monthPeriods[0]?.endDate ?? "";
 
   const [
     studentsResult,
     studentsPerClassResult,
-    counselingCountResults,
+    counselingRecordsResult,
     documentsResult,
     confessionsResult,
   ] = await Promise.all([
@@ -45,15 +47,11 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
       .from("v_student_count_by_class")
       .select("class_name, total_students")
       .order("class_name", { ascending: true }),
-    Promise.all(
-      monthPeriods.map((period) =>
-        supabase
-          .from("violation_records")
-          .select("id", { count: "exact", head: true })
-          .gte("violation_date", period.startDate)
-          .lte("violation_date", period.endDate),
-      ),
-    ),
+    supabase
+      .from("violation_records")
+      .select("violation_date")
+      .gte("violation_date", minDate)
+      .lte("violation_date", maxDate),
     supabase.from("bk_documents").select("id", { count: "exact", head: true }),
     supabase.from("digital_confessions").select("id", { count: "exact", head: true }).is("deleted_at", null),
   ]);
@@ -64,13 +62,9 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
   if (studentsPerClassResult.error) {
     logSupabaseError("[Dashboard] v_student_count_by_class", studentsPerClassResult.error);
   }
-  counselingCountResults.forEach((result, index) => {
-    if (result.error) {
-      logSupabaseError("[Dashboard] violation_records count", result.error, {
-        period: monthPeriods[index],
-      });
-    }
-  });
+  if (counselingRecordsResult.error) {
+    logSupabaseError("[Dashboard] violation_records fetch", counselingRecordsResult.error);
+  }
   if (documentsResult.error) {
     logSupabaseError("[Dashboard] bk_documents count", documentsResult.error);
   }
@@ -81,14 +75,14 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
   if (
     studentsResult.error ||
     studentsPerClassResult.error ||
-    counselingCountResults.some((result) => result.error) ||
+    counselingRecordsResult.error ||
     documentsResult.error ||
     confessionsResult.error
   ) {
     const firstError =
       studentsResult.error ??
       studentsPerClassResult.error ??
-      counselingCountResults.find((result) => result.error)?.error ??
+      counselingRecordsResult.error ??
       documentsResult.error ??
       confessionsResult.error ??
       null;
@@ -102,12 +96,24 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
     class_name: string | null;
     total_students: number | null;
   }>;
+  
+  const violationDates = (counselingRecordsResult.data ?? []) as Array<{ violation_date: string }>;
+  const monthCounts = new Map<string, number>();
+  
+  violationDates.forEach((row) => {
+    // violation_date is YYYY-MM-DD
+    const prefix = row.violation_date.substring(0, 7); // YYYY-MM
+    monthCounts.set(prefix, (monthCounts.get(prefix) ?? 0) + 1);
+  });
 
   const counselingPerMonth = monthPeriods
-    .map((period, index) => ({
-      label: period.label,
-      value: counselingCountResults[index]?.count ?? 0,
-    }))
+    .map((period) => {
+      const prefix = `${period.year}-${String(period.month).padStart(2, "0")}`;
+      return {
+        label: period.label,
+        value: monthCounts.get(prefix) ?? 0,
+      };
+    })
     .filter((item) => item.value > 0);
 
   return {

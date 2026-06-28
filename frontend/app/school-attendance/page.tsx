@@ -2,7 +2,6 @@ import { revalidatePath } from "next/cache";
 
 import { ErrorState } from "@/components/shared/ErrorState";
 import { PageHeader } from "@/components/shared/PageHeader";
-import { SchoolAttendanceForm } from "@/features/school-attendance/components/SchoolAttendanceForm";
 import { SchoolAttendanceFilter } from "@/features/school-attendance/components/SchoolAttendanceFilter";
 import { SchoolAttendanceTable } from "@/features/school-attendance/components/SchoolAttendanceTable";
 import {
@@ -82,8 +81,9 @@ export default async function SchoolAttendancePage({
       revalidatePath("/school-attendance");
 
       return {
-        ...INITIAL_SCHOOL_ATTENDANCE_FORM_STATE,
+        status: "success",
         message: "Daftar hadir berhasil disimpan.",
+        errors: {},
         values: {
           ...EMPTY_SCHOOL_ATTENDANCE_FORM_VALUES,
           className: values.className,
@@ -117,23 +117,8 @@ export default async function SchoolAttendancePage({
     <section className="space-y-6">
       <PageHeader
         title="Daftar Hadir Sekolah"
-        description="Tambah data lewat form, lalu lihat rekap kehadiran siswa per kelas dalam format tabel bulanan."
+        description="Lihat rekap kehadiran siswa per kelas dalam format tabel bulanan."
       />
-      <details className="border border-slate-300 bg-white">
-        <summary className="cursor-pointer list-none border-b border-slate-200 px-3 py-3 text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
-          Tambah Daftar Hadir
-        </summary>
-        <div className="px-3 py-3">
-          <SchoolAttendanceForm
-            action={createSchoolAttendanceAction}
-            initialValues={{
-              className: selectedClass,
-              month: String(selectedMonth),
-              year: String(selectedYear),
-            }}
-          />
-        </div>
-      </details>
       {loadError ? (
         <ErrorState description={loadError} />
       ) : (
@@ -143,6 +128,7 @@ export default async function SchoolAttendancePage({
             selectedClass={selectedClass}
             selectedMonth={selectedMonth}
             selectedYear={selectedYear}
+            action={createSchoolAttendanceAction}
           />
           {result ? <SchoolAttendanceTable result={result} /> : null}
         </>

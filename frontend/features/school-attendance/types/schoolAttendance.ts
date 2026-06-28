@@ -41,7 +41,7 @@ export type SchoolAttendanceFormErrors = Partial<
 >;
 
 export type SchoolAttendanceFormState = {
-  status: "idle" | "error";
+  status: "idle" | "error" | "success";
   message?: string;
   errors: SchoolAttendanceFormErrors;
   values: SchoolAttendanceFormValues;

@@ -13,11 +13,17 @@ import {
   isPublicRoute,
 } from "@/lib/auth/permissions";
 
+import type { User } from "@supabase/supabase-js";
+import type { AppRole } from "@/lib/auth/permissions";
+
 type AppLayoutProps = {
   children: React.ReactNode;
+  initialUser?: User | null;
+  initialRole?: AppRole;
+  initialFullName?: string;
 };
 
-function ProtectedAppShell({ children }: AppLayoutProps) {
+function ProtectedAppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { isLoading, role } = useAuth();
@@ -68,7 +74,7 @@ function ProtectedAppShell({ children }: AppLayoutProps) {
   );
 }
 
-export function AppLayout({ children }: AppLayoutProps) {
+export function AppLayout({ children, initialUser, initialRole, initialFullName }: AppLayoutProps) {
   const pathname = usePathname();
 
   if (isPublicRoute(pathname)) {
@@ -76,7 +82,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   }
 
   return (
-    <AuthProvider>
+    <AuthProvider initialUser={initialUser} initialRole={initialRole} initialFullName={initialFullName}>
       <ProtectedAppShell>{children}</ProtectedAppShell>
     </AuthProvider>
   );

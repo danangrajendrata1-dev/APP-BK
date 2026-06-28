@@ -126,9 +126,10 @@ export function createSchoolAttendanceFormState(
   values: SchoolAttendanceFormValues,
   errors: SchoolAttendanceFormErrors = {},
   message = "",
+  status: "error" | "success" = "error",
 ): SchoolAttendanceFormState {
   return {
-    status: "error",
+    status,
     message,
     errors,
     values,

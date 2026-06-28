@@ -137,13 +137,20 @@ async function buildAuthState(user: User | null): Promise<AuthContextValue> {
   };
 }
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+type AuthProviderProps = { 
+  children: ReactNode;
+  initialUser?: User | null;
+  initialRole?: AppRole;
+  initialFullName?: string;
+};
+
+export function AuthProvider({ children, initialUser, initialRole, initialFullName }: AuthProviderProps) {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const [authState, setAuthState] = useState<AuthContextValue>({
-    user: null,
-    role: "siswa",
-    fullName: "Pengguna",
-    isLoading: true,
+    user: initialUser ?? null,
+    role: initialRole ?? "siswa",
+    fullName: initialFullName ?? "Pengguna",
+    isLoading: initialUser === undefined,
   });
   const profileCacheRef = useRef<Record<string, AuthContextValue>>({});
   const profileFetchPromiseRef = useRef<Record<string, Promise<AuthContextValue> | undefined>>({});

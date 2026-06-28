@@ -97,9 +97,10 @@ export function createBkServiceAttendanceFormState(
   values: BkServiceAttendanceFormValues,
   errors: BkServiceAttendanceFormErrors = {},
   message = "",
+  status: "error" | "success" = "error",
 ): BkServiceAttendanceFormState {
   return {
-    status: "error",
+    status,
     message,
     errors,
     values,

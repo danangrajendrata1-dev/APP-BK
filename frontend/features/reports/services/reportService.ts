@@ -187,7 +187,7 @@ export async function getReportsData(filters: ReportsFilters): Promise<ReportsDa
 
   let counselingStatsQuery = supabase
     .from("violation_records")
-    .select("student_name, class_name");
+    .select("student_name, class_name, violation_date");
   counselingStatsQuery = applyClassFilter(
     applyDateFilter(counselingStatsQuery, "violation_date"),
   );
@@ -260,17 +260,7 @@ export async function getReportsData(filters: ReportsFilters): Promise<ReportsDa
         return statusCountQuery.eq("attendance_status", option.value);
       }),
     ),
-    Promise.all(
-      counselingMonthPeriods.map((period) => {
-        let counselingMonthCountQuery = supabase
-          .from("violation_records")
-          .select("id", { count: "exact", head: true });
-        counselingMonthCountQuery = applyClassFilter(counselingMonthCountQuery);
-        return counselingMonthCountQuery
-          .gte("violation_date", period.start)
-          .lte("violation_date", period.end);
-      }),
-    ),
+    Promise.resolve([]),
   ]);
 
   if (attendanceResult.error) logSupabaseError("[Reports] school_attendance list", attendanceResult.error, { filters, dateRange });
@@ -294,14 +284,7 @@ if (parentCallCountResult.error) logSupabaseError("[Reports] bk_documents count"
       });
     }
   });
-  counselingPerMonthCountResults.forEach((result, index) => {
-    if (result.error) {
-      logSupabaseError("[Reports] violation_records month count", result.error, {
-        period: counselingMonthPeriods[index],
-        filters,
-      });
-    }
-  });
+
 
   const classAssistanceListMissingSchema = isMissingSchemaError(
     classAssistanceResult.error,
@@ -326,8 +309,7 @@ if (parentCallCountResult.error) logSupabaseError("[Reports] bk_documents count"
     counselingCountResult.error ||
     (classAssistanceCountResult.error && !classAssistanceCountMissingSchema) ||
     parentCallCountResult.error ||
-    attendanceStatusCountResults.some((result) => result.error) ||
-    counselingPerMonthCountResults.some((result) => result.error)
+    attendanceStatusCountResults.some((result) => result.error)
   ) {
     const firstError =
       attendanceResult.error ??
@@ -349,7 +331,6 @@ if (parentCallCountResult.error) logSupabaseError("[Reports] bk_documents count"
         : null) ??
       parentCallCountResult.error ??
       attendanceStatusCountResults.find((result) => result.error)?.error ??
-      counselingPerMonthCountResults.find((result) => result.error)?.error ??
       null;
 
     throw new Error(
@@ -555,12 +536,24 @@ if (parentCallCountResult.error) logSupabaseError("[Reports] bk_documents count"
     filters,
     reportSections,
     charts: {
-      counselingPerMonth: counselingMonthPeriods
-        .map((period, index) => ({
-          label: period.label,
-          value: counselingPerMonthCountResults[index]?.count ?? 0,
-        }))
-        .filter((item) => item.value > 0),
+      counselingPerMonth: (() => {
+        const monthCounts = new Map<string, number>();
+        counselingStatsRowsSource.forEach((row) => {
+          if (!row.violation_date) return;
+          const prefix = row.violation_date.substring(0, 7); // YYYY-MM
+          monthCounts.set(prefix, (monthCounts.get(prefix) ?? 0) + 1);
+        });
+        
+        return counselingMonthPeriods
+          .map((period) => {
+            const prefix = period.start.substring(0, 7);
+            return {
+              label: period.label,
+              value: monthCounts.get(prefix) ?? 0,
+            };
+          })
+          .filter((item) => item.value > 0);
+      })(),
       studentsMostServed: sortChartItems(
         [...studentsMostServedMap.entries()].map(([label, value]) => ({ label, value })),
       ).slice(0, 10),

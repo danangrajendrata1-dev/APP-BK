@@ -41,7 +41,7 @@ export type BkServiceAttendanceFormErrors = Partial<
 >;
 
 export type BkServiceAttendanceFormState = {
-  status: "idle" | "error";
+  status: "idle" | "error" | "success";
   message?: string;
   errors: BkServiceAttendanceFormErrors;
   values: BkServiceAttendanceFormValues;
