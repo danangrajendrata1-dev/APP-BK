@@ -1,5 +1,5 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { unstable_cache } from "next/cache";
+
 import {
   buildSupabaseErrorMessage,
   isMissingSchemaError,
@@ -174,28 +174,24 @@ export async function getStudents(
   };
 }
 
-export const getStudentClassOptions = unstable_cache(
-  async (): Promise<string[]> => {
-    const supabase = await createSupabaseServerClient();
-    const { data, error } = await supabase
-      .from("v_student_class_options")
-      .select("class_name")
-      .order("class_name", { ascending: true });
+export async function getStudentClassOptions(): Promise<string[]> {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("v_student_class_options")
+    .select("class_name")
+    .order("class_name", { ascending: true });
 
-    if (error) {
-      logSupabaseError("[Students] getStudentClassOptions", error, {});
-      if (isMissingSchemaError(error)) {
-        return [];
-      }
-
+  if (error) {
+    logSupabaseError("[Students] getStudentClassOptions", error, {});
+    if (isMissingSchemaError(error)) {
       return [];
     }
 
-    return ((data ?? []) as Array<{ class_name: string }>).map((row) => row.class_name);
-  },
-  ["student-class-options"],
-  { revalidate: 3600, tags: ["student-class-options"] }
-);
+    return [];
+  }
+
+  return ((data ?? []) as Array<{ class_name: string }>).map((row) => row.class_name);
+}
 
 export async function getStudentById(id: string): Promise<Student | null> {
   const supabase = await createSupabaseServerClient();
